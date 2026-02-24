@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function AuthModal({ isOpen, onClose, initialMode }) {
   const [mode, setMode] = useState(initialMode);
   const [formData, setFormData] = useState({
@@ -16,20 +18,75 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
+    try {
       if (mode === 'signup') {
-        alert('Sign up submitted! Connect your backend to finish registration.');
+        const payload = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          linkedIn: formData.linkedIn,
+          github: formData.github,
+          skills: formData.skills
+            ? formData.skills.split(',').map((s) => s.trim()).filter(Boolean)
+            : [],
+          domains: formData.domains
+            ? formData.domains.split(',').map((d) => d.trim()).filter(Boolean)
+            : [],
+        };
+
+        const res = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Registration failed');
+
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+
+        // redirect to welcome page
+        window.location.href = '/welcome';
+        return;
       } else {
-        alert('Login submitted! Connect your backend to authenticate.');
+        const payload = {
+          email: formData.email,
+          password: formData.password,
+        };
+
+        const res = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Login failed');
+
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        // redirect to welcome page
+        window.location.href = '/welcome';
+        return;
       }
+    } catch (err) {
+      setError(err.message || 'Something went wrong');
+    } finally {
       setLoading(false);
-      onClose();
-    }, 400);
+    }
   };
 
   const handleChange = (e) => {
