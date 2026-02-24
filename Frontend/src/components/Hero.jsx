@@ -21,7 +21,7 @@ export default function Hero({ onGetStarted }) {
                 onClick={onGetStarted}
                 className="bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-3 rounded-lg font-medium transition-colors"
               >
-                Get Started Free
+                Get Started
               </button>
               <button className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-3 rounded-lg font-medium border border-gray-300 transition-colors">
                 Learn More
