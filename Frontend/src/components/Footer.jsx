@@ -4,9 +4,12 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">
-              TeamUp
-            </h3>
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-700 to-green-600 bg-clip-text text-transparent">
+                Team
+              </h1>
+              <img src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1771964567/output-onlinepngtools_3_zkidcx.png" alt="TeamUp Logo" className="ml-1 w-8 h-10" />
+          </div>
             <p className="text-sm text-gray-400">
               Connect with talented teammates and build amazing projects together.
             </p>
