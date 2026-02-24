@@ -1,7 +1,7 @@
 export default function Hero({ onGetStarted }) {
   return (
-    <div className="pt-20 min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
-      <div className="max-w-7xl mx-auto px-6 py-20">
+    <div className="pt-24 min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-5xl lg:text-6xl font-bold leading-tight mb-6">
@@ -34,48 +34,76 @@ export default function Hero({ onGetStarted }) {
               <div className="space-y-4">
                 <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      S
-                    </div>
-                    <div>
+                    <img 
+                      src="https://randomuser.me/api/portraits/women/44.jpg" 
+                      alt="Sanjana"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
                       <div className="font-semibold text-gray-900">Sanjana</div>
-                      <div className="text-sm text-gray-600">React • Node.js</div>
+                      <div className="text-sm text-gray-600">
+                        React • Node.js 
+                        <span className="inline-block ml-2 px-3 py-0.5 bg-white-100 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-400">
+                          Night Owl 
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      A
-                    </div>
-                    <div>
+                    <img 
+                      src="https://randomuser.me/api/portraits/men/32.jpg" 
+                      alt="Arjun"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
                       <div className="font-semibold text-gray-900">Arjun</div>
-                      <div className="text-sm text-gray-600">Python • ML</div>
+                      <div className="text-sm text-gray-600">
+                        Python • ML 
+                        <span className="inline-block ml-2 px-3 py-0.5 bg-white-100 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-400">
+                          Problem Solver 
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      P
-                    </div>
-                    <div>
+                    <img 
+                      src="https://randomuser.me/api/portraits/women/65.jpg" 
+                      alt="Priya"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
                       <div className="font-semibold text-gray-900">Priya</div>
-                      <div className="text-sm text-gray-600">Design • UI/UX</div>
+                      <div className="text-sm text-gray-600">
+                        Design • UI/UX 
+                        <span className="inline-block ml-2 px-3 py-0.5 bg-white-100 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-400">
+                          Creative Mind 
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      R
-                    </div>
-                    <div>
+                    <img 
+                      src="https://randomuser.me/api/portraits/men/46.jpg" 
+                      alt="Rohan"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
                       <div className="font-semibold text-gray-900">Rohan</div>
-                      <div className="text-sm text-gray-600">Product • Pitch</div>
+                      <div className="text-sm text-gray-600">
+                        Product • Pitch 
+                        <span className="inline-block ml-2 px-3 py-0.5 bg-white-100 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-400">
+                          Team Player 
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -178,7 +178,7 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
         </button>
 
         <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-emerald-700 to-green-600 bg-clip-text text-transparent">
-          {mode === 'login' ? 'Welcome Back' : 'Join TeamUp'}
+          {mode === 'login' ? 'Welcome Back !' : 'Join TeamUp'}
         </h2>
 
         {error && (
@@ -205,8 +205,8 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
             </div>
           )}
 
-          {/* Email and Password side by side */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Email and Password - vertical in login, side by side in signup */}
+          <div className={mode === 'login' ? 'space-y-4' : 'grid grid-cols-2 gap-3'}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -466,7 +466,7 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-emerald-700 to-green-600 text-white py-3 rounded-lg font-medium hover:from-emerald-800 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-emerald-700 to-green-600 text-white py-2.5 rounded-lg font-medium hover:from-emerald-800 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
           </button>
