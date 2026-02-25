@@ -1,3 +1,5 @@
+import { Target, Rocket, Users, MessageCircle, UserPlus, MessageSquare, Sparkles, PartyPopper } from 'lucide-react';
+
 export default function Hero({ onGetStarted }) {
   return (
     <div className="pt-24 min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
@@ -112,61 +114,193 @@ export default function Hero({ onGetStarted }) {
           </div>
         </div>
 
-        <div className="mt-16 grid lg:grid-cols-3 gap-10">
-          <div className="bg-white rounded-2xl p-10 shadow-md border border-gray-100 min-h-[200px]">
-            <div className="text-lg font-semibold text-gray-900 mb-2">Skill-Based Matching</div>
-            <p className="text-gray-600">
-              Match with teammates based on tech stack, role, and project interests.
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl p-10 shadow-md border border-gray-100 min-h-[200px]">
-            <div className="text-lg font-semibold text-gray-900 mb-2">Hackathon Ready</div>
-            <p className="text-gray-600">
-              Find teams aligned with upcoming hackathons and deadlines.
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl p-10 shadow-md border border-gray-100 min-h-[200px]">
-            <div className="text-lg font-semibold text-gray-900 mb-2">Built-in Collaboration</div>
-            <p className="text-gray-600">
-              Organize roles, goals, and timelines from a single workspace.
-            </p>
+        <div className="mt-16 overflow-hidden">
+          <div className="flex gap-6 animate-scroll">
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 min-h-[200px] min-w-[240px] hover:shadow-2xl hover:scale-[1.02] hover:border-emerald-200 transition-all duration-300 cursor-pointer group flex-shrink-0">
+              <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-lg font-bold text-gray-900 mb-2">Skill-Based Matching</div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Match with teammates based on tech stack, role, and project interests.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 min-h-[200px] min-w-[240px] hover:shadow-2xl hover:scale-[1.02] hover:border-emerald-200 transition-all duration-300 cursor-pointer group flex-shrink-0">
+              <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                <Rocket className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-lg font-bold text-gray-900 mb-2">Hackathon Ready</div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Find teams aligned with upcoming hackathons and deadlines.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 min-h-[200px] min-w-[240px] hover:shadow-2xl hover:scale-[1.02] hover:border-emerald-200 transition-all duration-300 cursor-pointer group flex-shrink-0">
+              <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                <Users className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-lg font-bold text-gray-900 mb-2">Built-in Collaboration</div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Organize roles, goals, and timelines from a single workspace.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 min-h-[200px] min-w-[240px] hover:shadow-2xl hover:scale-[1.02] hover:border-emerald-200 transition-all duration-300 cursor-pointer group flex-shrink-0">
+              <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                <MessageCircle className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-lg font-bold text-gray-900 mb-2">Live Chat Rooms</div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Join hackathon discussions and connect with teams in real-time.
+              </p>
+            </div>
+            {/* Duplicate cards for seamless loop */}
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 min-h-[200px] min-w-[240px] hover:shadow-2xl hover:scale-[1.02] hover:border-emerald-200 transition-all duration-300 cursor-pointer group flex-shrink-0">
+              <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-lg font-bold text-gray-900 mb-2">Skill-Based Matching</div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Match with teammates based on tech stack, role, and project interests.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 min-h-[200px] min-w-[240px] hover:shadow-2xl hover:scale-[1.02] hover:border-emerald-200 transition-all duration-300 cursor-pointer group flex-shrink-0">
+              <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                <Rocket className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-lg font-bold text-gray-900 mb-2">Hackathon Ready</div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Find teams aligned with upcoming hackathons and deadlines.
+              </p>
+            </div>
           </div>
         </div>
 
+        <style jsx>{`
+          @keyframes scroll {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(calc(-240px * 4 - 1.5rem * 4));
+            }
+          }
+          .animate-scroll {
+            animation: scroll 20s linear infinite;
+          }
+          .animate-scroll:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
+
         <div className="mt-12 bg-white rounded-3xl p-8 shadow-lg border border-gray-100">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-              <div className="text-sm uppercase tracking-widest text-emerald-700 font-semibold mb-2">
-                How It Works
+          <div className="text-center mb-12">
+            <div className="text-sm uppercase tracking-widest text-emerald-700 font-semibold mb-2">
+              How It Works
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900">Your Journey to the Perfect Team</h2>
+          </div>
+
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Step 1 */}
+            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+              <div className="grid grid-cols-2 gap-8 items-center">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-sm">1</span>
+                    <h3 className="text-xl font-bold text-gray-900">Create Your Account</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Sign up and tell us about your skills, tech stack, and hackathon goals. Complete a quick personality quiz to help us understand your working style and preferences.
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <img 
+                    src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1772007464/form-removebg-preview_unykws.png" 
+                    alt="Create Account"
+                    className="w-50 h-40  object-cover "
+                  />
+                </div>
               </div>
-              <h2 className="text-3xl font-bold text-gray-900">Launch your team in three steps</h2>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <span className="px-4 py-2 rounded-full bg-emerald-50 text-emerald-800 text-sm font-medium">
-                Create Profile
-              </span>
-              <span className="px-4 py-2 rounded-full bg-green-50 text-green-800 text-sm font-medium">
-                Match Teammates
-              </span>
-              <span className="px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium">
-                Start Building
-              </span>
+
+            {/* Step 2 */}
+            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+              <div className="grid grid-cols-2 gap-8 items-center">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-sm">2</span>
+                    <h3 className="text-xl font-bold text-gray-900">Explore & Connect</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Jump into our live chat rooms to discuss hackathons, share ideas, and network with other developers, designers, and innovators from around the world.
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <img 
+                    src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1772007920/output-onlinepngtools__4_-removebg-preview_iqjbb7.png" 
+                    alt="Explore & Connect"
+                    className="w-49 h-40 object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+              <div className="grid grid-cols-2 gap-8 items-center">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-sm">3</span>
+                    <h3 className="text-xl font-bold text-gray-900">Get Matched with Teammates</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Our smart matchmaking algorithm recommends teammates based on your required tech stack, personality type, and working style preferences. Find your perfect team fit!
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <img 
+                    src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1772008993/output-onlinepngtools__1_-removebg-preview_bz1iap.png" 
+                    alt="Get Matched"
+                    className="w-50 h-40 object-cover "
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 */}
+            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+              <div className="grid grid-cols-2 gap-8 items-center">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-sm">4</span>
+                    <h3 className="text-xl font-bold text-gray-900">Chat & Team Up</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Connect personally with your matches through direct messaging. Get to know each other, discuss project ideas, and when you're ready—voilà! You're all set to participate in any hackathon together.
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <img 
+                    src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1772008848/output-onlinepngtools-removebg-preview_fnwvz1.png" 
+                    alt="Chat & Team Up"
+                    className="w-50 h-40  object-cover "
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mt-8 grid md:grid-cols-3 gap-10">
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 min-h-[170px]">
-              <div className="text-sm font-semibold text-gray-900 mb-1">Step 1</div>
-              <div className="text-gray-600">Tell us your skills, role, and hackathon goals.</div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 min-h-[170px]">
-              <div className="text-sm font-semibold text-gray-900 mb-1">Step 2</div>
-              <div className="text-gray-600">Review curated matches and shortlist your favorites.</div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 min-h-[170px]">
-              <div className="text-sm font-semibold text-gray-900 mb-1">Step 3</div>
-              <div className="text-gray-600">Kick off planning, tasks, and milestones with your team.</div>
-            </div>
-          </div>
+        </div>
+
+        {/* Closing Statement */}
+        <div className="mt-16 text-center py-12">
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+            Great Ideas Deserve Great Teams
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-3">
+            Because the best projects aren't built alone—they're built together.
+          </p>
+          <p className="text-lg text-emerald-700 font-semibold">
+            TeamUp: Where Innovators Meet Their Match
+          </p>
         </div>
       </div>
     </div>
