@@ -7,7 +7,7 @@ const PREDEFINED_SKILLS = [
   'React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 'MongoDB', 'PostgreSQL',
   'Docker', 'AWS', 'Vue.js', 'Angular', 'Django', 'FastAPI', 'GraphQL', 'REST API',
   'HTML/CSS', 'PHP', 'C++', 'Java', 'Go', 'Rust', 'Kubernetes', 'Git'
-];e
+];
 
 const PREDEFINED_DOMAINS = [
   'Web Development', 'Mobile Development', 'Data Science', 'Machine Learning',
