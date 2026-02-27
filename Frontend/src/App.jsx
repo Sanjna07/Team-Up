@@ -20,11 +20,9 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      {/* Pass a logo image URL via VITE_LOGO_URL in .env (or replace the expression below with a string URL) */}
       <Navbar
         onLoginClick={handleLoginClick}
         onSignUpClick={handleSignUpClick}
-        imageUrl={import.meta.env.VITE_LOGO_URL || ''}
       />
       <Hero onGetStarted={handleSignUpClick} />
       <Footer />

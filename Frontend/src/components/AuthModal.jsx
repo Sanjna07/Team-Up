@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, ChevronDown } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://team-up-1-tyd8.onrender.com';
 
 const PREDEFINED_SKILLS = [
   'React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 'MongoDB', 'PostgreSQL',
   'Docker', 'AWS', 'Vue.js', 'Angular', 'Django', 'FastAPI', 'GraphQL', 'REST API',
   'HTML/CSS', 'PHP', 'C++', 'Java', 'Go', 'Rust', 'Kubernetes', 'Git'
-];
+];e
 
 const PREDEFINED_DOMAINS = [
   'Web Development', 'Mobile Development', 'Data Science', 'Machine Learning',
@@ -72,6 +72,7 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
           domains: formData.domains,
         };
 
+        // api call
         const res = await fetch(`${API_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
