@@ -1,6 +1,6 @@
-import { Target, Rocket, Users, MessageCircle, UserPlus, MessageSquare, Sparkles, PartyPopper } from 'lucide-react';
+import { Target, Rocket, Users, MessageCircle } from 'lucide-react';
 
-export default function Hero({ onGetStarted }) {
+export default function Hero({ onGetStarted, onLearnMore }) {
   return (
     <div className="pt-24 min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -25,7 +25,10 @@ export default function Hero({ onGetStarted }) {
               >
                 Get Started
               </button>
-              <button className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-3 rounded-lg font-medium border border-gray-300 transition-colors">
+              <button
+                onClick={onLearnMore}
+                className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-3 rounded-lg font-medium border border-gray-300 transition-colors"
+              >
                 Learn More
               </button>
             </div>
@@ -236,7 +239,7 @@ export default function Hero({ onGetStarted }) {
                 </div>
                 <div className="flex justify-center">
                   <img 
-                    src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1772007920/output-onlinepngtools__4_-removebg-preview_iqjbb7.png" 
+                    src="https://res.cloudinary.com/dx0r0pbgb/image/upload/v1772007929/output-onlinepngtools__4_-removebg-preview_bzaypp.png" 
                     alt="Explore & Connect"
                     className="w-49 h-40 object-cover"
                   />

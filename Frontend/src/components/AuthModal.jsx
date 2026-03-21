@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, ChevronDown } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://team-up-1-tyd8.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const PREDEFINED_SKILLS = [
   'React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 'MongoDB', 'PostgreSQL',
@@ -130,33 +130,11 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
     });
   };
 
-  const addSkill = () => {
-    const trimmed = tempSkill.trim();
-    if (trimmed && !formData.skills.includes(trimmed)) {
-      setFormData({
-        ...formData,
-        skills: [...formData.skills, trimmed],
-      });
-      setTempSkill('');
-    }
-  };
-
   const removeSkill = (skill) => {
     setFormData({
       ...formData,
       skills: formData.skills.filter((s) => s !== skill),
     });
-  };
-
-  const addDomain = () => {
-    const trimmed = tempDomain.trim();
-    if (trimmed && !formData.domains.includes(trimmed)) {
-      setFormData({
-        ...formData,
-        domains: [...formData.domains, trimmed],
-      });
-      setTempDomain('');
-    }
   };
 
   const removeDomain = (domain) => {

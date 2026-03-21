@@ -1,7 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-
-export default function Navbar({ onLoginClick, onSignUpClick }) {
-  const [active, setActive] = useState('Home');
+export default function Navbar({ onLoginClick, onSignUpClick, onNavClick }) {
   const navLinks = ['Home', 'Rooms', 'About', 'Contact'];
 
   return (
@@ -38,10 +35,8 @@ export default function Navbar({ onLoginClick, onSignUpClick }) {
               {navLinks.map((link) => (
                 <button
                   key={link}
-                  onClick={() => setActive(link)}
-                  className={`px-8 py-2 rounded-full text-sm font-medium transition-colors ${
-                    'text-gray-700'
-                  } hover:bg-emerald-50 hover:text-emerald-700`}
+                  onClick={() => onNavClick(link)}
+                  className="px-8 py-2 rounded-full text-sm font-medium transition-colors text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 >
                   {link}
                 </button>
