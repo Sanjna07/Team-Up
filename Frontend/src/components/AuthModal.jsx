@@ -86,8 +86,7 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
           localStorage.setItem('token', data.token);
         }
 
-        // redirect to welcome page
-        window.location.href = '/welcome';
+        window.location.href = '/dashboard';
         return;
       } else {
         const payload = {
@@ -112,8 +111,7 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
 
-        // redirect to welcome page
-        window.location.href = '/welcome';
+        window.location.href = '/dashboard';
         return;
       }
     } catch (err) {
