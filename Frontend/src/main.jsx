@@ -4,6 +4,7 @@ import App from './App.jsx';
 import Welcome from './Welcome.jsx';
 import Dashboard from './Dashboard.jsx';
 import Profile from './Profile.jsx';
+import Settings from './Settings.jsx';
 import './index.css';
 
 const path = window.location.pathname;
@@ -14,6 +15,8 @@ createRoot(document.getElementById('root')).render(
       <Dashboard />
     ) : path === '/profile' ? (
       <Profile />
+    ) : path === '/settings' ? (
+      <Settings />
     ) : path === '/welcome' ? (
       <Welcome />
     ) : path === '/contact' ? (
