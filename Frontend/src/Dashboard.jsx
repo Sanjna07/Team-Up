@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Bell, MessageCircle, CalendarDays, LogOut, User, Settings, HelpCircle } from 'lucide-react';
+import CreateRoomModal from './components/CreateRoomModal';
 
 export default function Dashboard() {
-  const [userData, setUserData] = useState({ name: 'there', email: '', initial: 'U' });
+  const [userData, setUserData] = useState({ 
+    name: 'there', 
+    email: '', 
+    initial: 'U', 
+    profileImage: null,
+    personalityTag: null
+  });
   const [activeList, setActiveList] = useState('rooms');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -16,7 +24,8 @@ export default function Dashboard() {
             name: parsedUser.name,
             email: parsedUser.email || '',
             initial: parsedUser.name.trim().charAt(0).toUpperCase() || 'U',
-            profileImage: parsedUser.profileImage || null
+            profileImage: parsedUser.profileImage || null,
+            personalityTag: parsedUser.personality?.label || null
           });
         }
       }
@@ -78,6 +87,7 @@ export default function Dashboard() {
                   <div className="py-1">
                     {[
                       { label: 'My Profile', icon: User, path: '/profile' },
+                      { label: 'Community Chat', icon: MessageCircle, path: '/community' },
                       { label: 'Settings', icon: Settings, path: '/settings' },
                       { label: 'Help', icon: HelpCircle, path: '/contact' }
                     ].map((item) => (
@@ -119,13 +129,24 @@ export default function Dashboard() {
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
               {userData.name}
             </h2>
+            {userData.personalityTag && (
+              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-full mb-1">
+                {userData.personalityTag}
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3 justify-end">
-            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/community'}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors"
+            >
               <MessageCircle className="w-4 h-4" />
               Community Chat
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-colors">
+            <button 
+              onClick={() => setIsCreateRoomOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-colors"
+            >
               <span className="text-lg leading-none">+</span>
               Create Room
             </button>
@@ -173,7 +194,10 @@ export default function Dashboard() {
               <p className="text-gray-600 leading-relaxed mb-4">
                 Our matchmaking feature helps you find the perfect collaborators fast.
               </p>
-              <button className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-lg font-medium transition-colors">
+              <button 
+                onClick={() => window.location.href = '/matchmaking'}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-lg font-medium transition-colors"
+              >
                 Explore matches
               </button>
             </div>
@@ -190,7 +214,10 @@ export default function Dashboard() {
               <p className="text-gray-600 mb-6 max-w-sm mx-auto">
                 Get tailored insights on roles, communication style, and team fit.
               </p>
-              <button className="bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-2 rounded-lg font-medium transition-colors mx-auto">
+              <button 
+                onClick={() => window.location.href = '/quiz'}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-2 rounded-lg font-medium transition-colors mx-auto"
+              >
                 Take quiz
               </button>
             </div>
@@ -283,6 +310,10 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      <CreateRoomModal 
+        isOpen={isCreateRoomOpen} 
+        onClose={() => setIsCreateRoomOpen(false)} 
+      />
     </div>
   );
 }

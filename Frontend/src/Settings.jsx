@@ -10,6 +10,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('notifications');
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [settings, setSettings] = useState({
     notifications: {
@@ -51,22 +52,31 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      setMessage({ type: 'error', text: 'Please enter your password to confirm' });
+      return;
+    }
+
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/auth/profile`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ password: deletePassword })
       });
 
-      if (!res.ok) throw new Error('Failed to delete account');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to delete account');
 
       localStorage.clear();
       window.location.href = '/';
     } catch (error) {
       setMessage({ type: 'error', text: error.message });
-      setShowDeleteConfirm(false);
+      setLoading(false);
     }
   };
 
@@ -75,7 +85,6 @@ export default function Settings() {
     { id: 'privacy', label: 'Privacy', icon: Lock },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'platform', label: 'App & Platform', icon: Smartphone },
-    { id: 'help', label: 'Help & Info', icon: HelpCircle },
   ];
 
   return (
@@ -254,15 +263,12 @@ export default function Settings() {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex items-center gap-2 px-10 py-4 bg-emerald-700 text-white rounded-2xl font-black hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-200 disabled:opacity-50"
+                className="px-8 py-2.5 bg-emerald-700 text-white rounded-full text-sm font-bold hover:bg-emerald-800 transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>
                 ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Save Changes
-                  </>
+                  'Save Preferences'
                 )}
               </button>
             </div>
@@ -283,27 +289,40 @@ export default function Settings() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mb-8 mx-auto">
-              <Trash2 className="w-10 h-10 text-red-500" />
-            </div>
-            <h3 className="text-3xl font-black text-center text-gray-900 mb-4 leading-tight">Wait, don't go!</h3>
-            <p className="text-center text-gray-500 font-medium mb-10 leading-relaxed">
-              Are you sure you want to delete your account? This will permanently remove your profile, teams, and connections. This action cannot be undone.
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">Delete Account?</h3>
+            <p className="text-center text-sm text-gray-500 font-medium mb-6 leading-relaxed">
+              This will permanently remove your profile and all associated data. Please enter your password to confirm.
             </p>
-            <div className="flex flex-col gap-3">
+            
+            <div className="mb-6">
+              <input
+                type="password"
+                placeholder="Enter your password"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
               <button
                 onClick={handleDeleteAccount}
-                className="w-full py-5 bg-red-500 text-white rounded-3xl font-black hover:bg-red-600 transition-all"
+                disabled={loading}
+                className="w-full py-2.5 bg-red-500 text-white rounded-full text-sm font-bold hover:bg-red-600 transition-all active:scale-[0.98] disabled:opacity-50"
               >
-                Yes, Delete Everything
+                {loading ? 'Processing...' : 'Delete Permanently'}
               </button>
               <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="w-full py-5 bg-gray-50 text-gray-500 rounded-3xl font-black hover:bg-gray-100 transition-all"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletePassword('');
+                }}
+                disabled={loading}
+                className="w-full py-2.5 bg-gray-50 text-gray-600 rounded-full text-sm font-bold hover:bg-gray-100 transition-all active:scale-[0.98] disabled:opacity-50"
               >
-                No, Keep My Account
+                Cancel
               </button>
             </div>
           </div>

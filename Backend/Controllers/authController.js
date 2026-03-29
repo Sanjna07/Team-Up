@@ -50,10 +50,22 @@ exports.register = async (req, res) => {
 
 exports.deleteProfile = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.user.id);
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to delete account" });
+    }
+
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+
+    await User.findByIdAndDelete(req.user.id);
     res.status(200).json({ message: "User account deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -115,7 +127,7 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, linkedIn, github, skills, domains, profileImage } = req.body;
+    const { name, linkedIn, github, skills, domains, profileImage, personality } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -127,6 +139,10 @@ exports.updateProfile = async (req, res) => {
     user.skills = skills || user.skills;
     user.domains = domains || user.domains;
     user.profileImage = profileImage || user.profileImage;
+    
+    if (personality?.label) {
+      user.personality = { ...user.personality, label: personality.label };
+    }
 
     await user.save();
 

@@ -5,6 +5,9 @@ import Welcome from './Welcome.jsx';
 import Dashboard from './Dashboard.jsx';
 import Profile from './Profile.jsx';
 import Settings from './Settings.jsx';
+import Quiz from './Quiz.jsx';
+import Matchmaking from './Matchmaking.jsx';
+import CommunityChat from './CommunityChat.jsx';
 import './index.css';
 
 const path = window.location.pathname;
@@ -17,6 +20,12 @@ createRoot(document.getElementById('root')).render(
       <Profile />
     ) : path === '/settings' ? (
       <Settings />
+    ) : path === '/quiz' ? (
+      <Quiz />
+    ) : path === '/matchmaking' ? (
+      <Matchmaking />
+    ) : path === '/community' ? (
+      <CommunityChat />
     ) : path === '/welcome' ? (
       <Welcome />
     ) : path === '/contact' ? (
