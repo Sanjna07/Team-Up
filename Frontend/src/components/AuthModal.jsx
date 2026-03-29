@@ -86,6 +86,10 @@ export default function AuthModal({ isOpen, onClose, initialMode }) {
           localStorage.setItem('token', data.token);
         }
 
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
         window.location.href = '/dashboard';
         return;
       } else {

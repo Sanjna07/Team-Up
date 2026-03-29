@@ -29,7 +29,18 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      token
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        skills: user.skills,
+        domains: user.domains,
+        linkedIn: user.linkedIn,
+        github: user.github,
+        profileImage: user.profileImage,
+        personality: user.personality
+      }
     });
 
   } catch (error) {
@@ -65,10 +76,62 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         skills: user.skills,
+        domains: user.domains,
+        linkedIn: user.linkedIn,
+        github: user.github,
+        profileImage: user.profileImage,
         personality: user.personality
       }
     });
 
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, linkedIn, github, skills, domains, profileImage } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.name = name || user.name;
+    user.linkedIn = linkedIn || user.linkedIn;
+    user.github = github || user.github;
+    user.skills = skills || user.skills;
+    user.domains = domains || user.domains;
+    user.profileImage = profileImage || user.profileImage;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        skills: user.skills,
+        domains: user.domains,
+        linkedIn: user.linkedIn,
+        github: user.github,
+        profileImage: user.profileImage,
+        personality: user.personality
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

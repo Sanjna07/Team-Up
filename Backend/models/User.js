@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   linkedIn: { type: String, required: true },
   github: { type: String, required: true },
+  profileImage: { type: String, default: null },
   skills: { type: [String], default: [] },
   domains: { type: [String], default: [] },
   personality: {

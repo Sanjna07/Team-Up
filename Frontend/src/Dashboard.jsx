@@ -15,7 +15,8 @@ export default function Dashboard() {
           setUserData({
             name: parsedUser.name,
             email: parsedUser.email || '',
-            initial: parsedUser.name.trim().charAt(0).toUpperCase() || 'U'
+            initial: parsedUser.name.trim().charAt(0).toUpperCase() || 'U',
+            profileImage: parsedUser.profileImage || null
           });
         }
       }
@@ -51,25 +52,43 @@ export default function Dashboard() {
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="w-11 h-11 rounded-full bg-emerald-700 text-white font-semibold flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-emerald-700 text-white font-semibold flex items-center justify-center overflow-hidden border-2 border-emerald-50"
               >
-                {userData.initial}
+                {userData.profileImage ? (
+                  <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  userData.initial
+                )}
               </button>
               {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50">
-                  <div className="px-3 py-2 border-b border-gray-100 bg-gray-50/50">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{userData.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{userData.email}</p>
+                <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0">
+                      {userData.profileImage ? (
+                        <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        userData.initial
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{userData.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{userData.email}</p>
+                    </div>
                   </div>
                   <div className="py-1">
                     {[
-                      { label: 'My Profile', icon: User },
-                      { label: 'Settings', icon: Settings },
-                      { label: 'Help', icon: HelpCircle }
+                      { label: 'My Profile', icon: User, path: '/profile' },
+                      { label: 'Settings', icon: Settings, path: '/settings' },
+                      { label: 'Help', icon: HelpCircle, path: '/contact' }
                     ].map((item) => (
                       <button
                         key={item.label}
-                        onClick={() => setIsProfileOpen(false)}
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          if (item.path) {
+                            window.location.href = item.path;
+                          }
+                        }}
                         className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50 transition-colors flex items-center gap-2"
                       >
                         <item.icon className="w-4 h-4 text-gray-400" />

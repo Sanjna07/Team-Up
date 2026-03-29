@@ -1,13 +1,22 @@
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, ArrowLeft } from 'lucide-react';
 
-export default function Contact() {
+export default function Contact({ standalone = false }) {
   const handleSubmit = (event) => {
     event.preventDefault();
   };
 
   return (
-    <section className="pt-28 min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
+    <section className={`${standalone ? 'py-12' : 'pt-28'} min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50`}>
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {standalone && (
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="mb-8 flex items-center gap-2 text-emerald-700 font-semibold hover:text-emerald-800 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+            Back to Dashboard
+          </button>
+        )}
         <div className="text-center mb-12">
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             Contact{' '}
