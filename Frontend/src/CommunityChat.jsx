@@ -45,13 +45,48 @@ export default function CommunityChat() {
   const [newMessage, setNewMessage] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserListOpen, setIsUserListOpen] = useState(true);
+  const [privateChatUser, setPrivateChatUser] = useState(null);
+  const [privateMessages, setPrivateMessages] = useState({});
+  const [newPrivateMessage, setNewPrivateMessage] = useState('');
+  const [chatSize, setChatSize] = useState({ width: 320, height: 450 });
+  const [isResizing, setIsResizing] = useState(false);
   const chatEndRef = useRef(null);
+  const privateChatEndRef = useRef(null);
+  const resizeRef = useRef(null);
 
   const [userData, setUserData] = useState({ 
     name: 'You', 
     initial: 'Y', 
     profileImage: null 
   });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      
+      const newWidth = Math.max(280, window.innerWidth - e.clientX - 24);
+      const newHeight = Math.max(350, window.innerHeight - e.clientY - 24);
+      
+      setChatSize({
+        width: newWidth,
+        height: newHeight
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   useEffect(() => {
     const rawUser = localStorage.getItem('user');
@@ -77,6 +112,10 @@ export default function CommunityChat() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    privateChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [privateMessages, privateChatUser]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -95,11 +134,37 @@ export default function CommunityChat() {
     setNewMessage('');
   };
 
+  const handleSendPrivateMessage = (e) => {
+    e.preventDefault();
+    if (!newPrivateMessage.trim() || !privateChatUser) return;
+
+    const msg = {
+      id: Date.now().toString(),
+      user: userData.name,
+      content: newPrivateMessage,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      initial: userData.initial,
+      isMe: true
+    };
+
+    const userId = privateChatUser.id || privateChatUser.name;
+    setPrivateMessages(prev => ({
+      ...prev,
+      [userId]: [...(prev[userId] || []), msg]
+    }));
+    setNewPrivateMessage('');
+  };
+
   const handlePfpClick = (user) => {
     setSelectedUser(user);
   };
 
   const closeProfile = () => {
+    setSelectedUser(null);
+  };
+
+  const startPrivateChat = (user) => {
+    setPrivateChatUser(user);
     setSelectedUser(null);
   };
 
@@ -339,76 +404,167 @@ export default function CommunityChat() {
       {selectedUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={closeProfile}>
           <div 
-            className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+            className="w-full max-w-sm bg-white rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Profile Header */}
-            <div className="h-28 bg-gradient-to-br from-emerald-600 to-green-500 relative">
+            {/* Banner */}
+            <div className="h-32 bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-600 relative">
               <button 
                 onClick={closeProfile}
-                className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-xl text-white transition-colors backdrop-blur-md"
+                className="absolute top-4 right-4 p-2 bg-black/10 hover:bg-black/20 rounded-full text-white transition-all backdrop-blur-md"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             
-            {/* Profile Info */}
-            <div className="px-6 pb-8 relative">
-              <div className="absolute -top-12 left-6">
-                <div className="w-24 h-24 rounded-3xl bg-emerald-600 border-[6px] border-white flex items-center justify-center text-4xl font-black text-white shadow-xl relative overflow-hidden">
-                  {selectedUser.initial}
+            {/* Content Container */}
+            <div className="px-8 pb-8 relative">
+              {/* Avatar Section */}
+              <div className="flex justify-between items-end -mt-12 mb-6">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-3xl bg-emerald-600 border-[6px] border-white flex items-center justify-center text-4xl font-black text-white shadow-xl overflow-hidden transition-transform group-hover:scale-105 duration-300">
+                    {selectedUser.initial}
+                  </div>
                   {selectedUser.status && (
-                    <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-white ${selectedUser.status === 'online' ? 'bg-emerald-500' : selectedUser.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-400'}`} />
+                    <div className={`absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 border-white shadow-sm ${selectedUser.status === 'online' ? 'bg-emerald-500' : selectedUser.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-400'}`} />
                   )}
                 </div>
-              </div>
-
-              <div className="mt-16">
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-2xl font-black text-gray-900">{selectedUser.name}</h2>
-                  <span className="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
+                <div className="pb-1">
+                  <span className="text-emerald-700 bg-emerald-50 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border border-emerald-100/50 shadow-sm">
                     {selectedUser.role}
                   </span>
                 </div>
-                <p className="text-sm text-gray-400 font-medium mb-6">@{selectedUser.name.toLowerCase().replace(' ', '')}</p>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">About Me</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-2xl border border-gray-100 italic">
+              </div>
+
+              {/* Identity Section */}
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-gray-900 leading-tight">{selectedUser.name}</h2>
+                <p className="text-sm text-gray-400 font-semibold tracking-tight">@{selectedUser.name.toLowerCase().replace(' ', '')}</p>
+              </div>
+              
+              {/* Info Section */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] mb-3">About Me</h3>
+                  <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100/50 relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/20 group-hover:bg-emerald-500 transition-colors duration-300" />
+                    <p className="text-sm text-gray-600 leading-relaxed font-medium italic pl-1">
                       "{selectedUser.bio || "This user is still crafting their story..."}"
                     </p>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <button 
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 px-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-95"
-                      onClick={() => {
-                        alert(`Direct message sent to ${selectedUser.name}!`);
-                        closeProfile();
-                      }}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      Chat
-                    </button>
-                    <button 
-                      className="flex-1 bg-gray-900 hover:bg-black text-white py-4 px-4 rounded-2xl font-bold transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2 active:scale-95"
-                      onClick={() => {
-                        alert(`Friend request sent to ${selectedUser.name}!`);
-                        closeProfile();
-                      }}
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      Connect
-                    </button>
-                  </div>
-                  
-                  <button className="w-full text-gray-400 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest transition-colors py-2">
-                    View Full Profile
+                {/* Actions Section */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-95 group"
+                    onClick={() => startPrivateChat(selectedUser)}
+                  >
+                    <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Chat
+                  </button>
+                  <button 
+                    className="flex-1 bg-gray-900 hover:bg-black text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2 active:scale-95 group"
+                    onClick={() => {
+                      alert(`Friend request sent to ${selectedUser.name}!`);
+                      closeProfile();
+                    }}
+                  >
+                    <UserPlus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Connect
                   </button>
                 </div>
+                
+                <button className="w-full text-gray-300 hover:text-emerald-600 text-[10px] font-black uppercase tracking-[0.2em] transition-all py-2 hover:bg-emerald-50 rounded-xl">
+                  View Full Profile
+                </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Floating Private Chat Window */}
+      {privateChatUser && (
+        <div 
+          style={{ width: `${chatSize.width}px`, height: `${chatSize.height}px` }}
+          className="fixed bottom-6 right-6 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col z-[150] animate-in slide-in-from-bottom-10 duration-300 overflow-hidden"
+        >
+          {/* Resize Handle - Top Left (more subtle) */}
+          <div 
+            onMouseDown={() => setIsResizing(true)}
+            className="absolute top-0 left-0 w-8 h-8 cursor-nw-resize z-20 group"
+          >
+            <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-white/20 group-hover:border-white/60 transition-colors" />
+          </div>
+
+          {/* Header */}
+          <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-4 flex items-center justify-between text-white shadow-md relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg border border-white/20">
+                  {privateChatUser.initial}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-emerald-600 shadow-sm" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[15px] font-black leading-none mb-1 truncate">{privateChatUser.name}</div>
+                <div className="text-[10px] opacity-80 font-bold uppercase tracking-widest">Connected</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button className="p-2 hover:bg-white/10 rounded-xl transition-colors hidden sm:block">
+                <Settings className="w-4 h-4 opacity-70" />
+              </button>
+              <button 
+                onClick={() => setPrivateChatUser(null)}
+                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/30 no-scrollbar min-h-0 relative">
+            {(privateMessages[privateChatUser.id || privateChatUser.name] || []).map((msg) => (
+              <div key={msg.id} className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
+                <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm text-[14px] leading-relaxed ${
+                  msg.isMe 
+                    ? 'bg-emerald-600 text-white rounded-tr-none shadow-emerald-600/10' 
+                    : 'bg-white text-gray-700 rounded-tl-none border border-gray-100'
+                }`}>
+                  {msg.content}
+                </div>
+                <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter mt-1 px-1">
+                  {msg.time}
+                </span>
+              </div>
+            ))}
+            <div ref={privateChatEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="p-4 bg-white border-t border-gray-100">
+            <form onSubmit={handleSendPrivateMessage} className="bg-gray-50 border border-gray-200 rounded-2xl focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:border-emerald-500 focus-within:bg-white transition-all flex items-center pl-4 pr-2 py-1.5 gap-2">
+              <input 
+                type="text"
+                value={newPrivateMessage}
+                onChange={(e) => setNewPrivateMessage(e.target.value)}
+                placeholder="Aa"
+                className="flex-1 bg-transparent text-[14px] py-2 outline-none text-gray-800 placeholder-gray-400 font-medium"
+              />
+              <button 
+                type="submit"
+                disabled={!newPrivateMessage.trim()}
+                className={`p-2.5 rounded-xl transition-all ${
+                  newPrivateMessage.trim() 
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95' 
+                    : 'text-gray-300'
+                }`}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         </div>
       )}
