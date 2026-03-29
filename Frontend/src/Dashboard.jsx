@@ -1,25 +1,34 @@
-import { useState } from 'react';
-import { Bell, MessageCircle, CalendarDays, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, MessageCircle, CalendarDays, LogOut, User, Settings, HelpCircle } from 'lucide-react';
 
 export default function Dashboard() {
-  let userName = 'there';
-  let userInitial = 'U';
+  const [userData, setUserData] = useState({ name: 'there', email: '', initial: 'U' });
   const [activeList, setActiveList] = useState('rooms');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  try {
-    const rawUser = localStorage.getItem('user');
-    if (rawUser) {
-      const parsedUser = JSON.parse(rawUser);
-      if (parsedUser?.name) {
-        userName = parsedUser.name;
-        userInitial = parsedUser.name.trim().charAt(0).toUpperCase() || 'U';
+  useEffect(() => {
+    try {
+      const rawUser = localStorage.getItem('user');
+      if (rawUser) {
+        const parsedUser = JSON.parse(rawUser);
+        if (parsedUser?.name) {
+          setUserData({
+            name: parsedUser.name,
+            email: parsedUser.email || '',
+            initial: parsedUser.name.trim().charAt(0).toUpperCase() || 'U'
+          });
+        }
       }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
     }
-  } catch {
-    userName = 'there';
-    userInitial = 'U';
-  }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    window.location.href = '/';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
@@ -44,26 +53,39 @@ export default function Dashboard() {
                 onClick={() => setIsProfileOpen((prev) => !prev)}
                 className="w-11 h-11 rounded-full bg-emerald-700 text-white font-semibold flex items-center justify-center"
               >
-                {userInitial}
+                {userData.initial}
               </button>
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50">
-                  {['My Profile', 'Settings', 'Help'].map((item) => (
+                <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50">
+                  <div className="px-3 py-2 border-b border-gray-100 bg-gray-50/50">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{userData.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{userData.email}</p>
+                  </div>
+                  <div className="py-1">
+                    {[
+                      { label: 'My Profile', icon: User },
+                      { label: 'Settings', icon: Settings },
+                      { label: 'Help', icon: HelpCircle }
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50 transition-colors flex items-center gap-2"
+                      >
+                        <item.icon className="w-4 h-4 text-gray-400" />
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="border-t border-gray-100 py-1">
                     <button
-                      key={item}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="w-full text-left px-3 py-2 text-sm leading-tight text-gray-700 hover:bg-emerald-50 transition-colors"
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
                     >
-                      {item}
+                      <LogOut className="w-4 h-4" />
+                      Logout
                     </button>
-                  ))}
-                  <button
-                    onClick={() => setIsProfileOpen(false)}
-                    className="w-full text-left px-3 py-2 text-sm leading-tight text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -76,7 +98,7 @@ export default function Dashboard() {
           <div className="flex items-end gap-3 flex-wrap">
             <span className="text-2xl lg:text-3xl uppercase tracking-widest text-emerald-700 font-semibold">Welcome , </span>
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
-              {userName}
+              {userData.name}
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-3 justify-end">
