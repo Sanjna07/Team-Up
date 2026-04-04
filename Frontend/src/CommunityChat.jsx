@@ -20,7 +20,10 @@ import {
 } from 'lucide-react';
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
+const socket = io(SOCKET_URL);
 
 export default function CommunityChat({ roomId }) {
   const [activeChannel, setActiveChannel] = useState({ 
@@ -161,7 +164,7 @@ export default function CommunityChat({ roomId }) {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/rooms');
+      const response = await fetch(`${API_URL}/api/rooms`);
       const data = await response.json();
       
       const rawUser = localStorage.getItem('user');
@@ -192,7 +195,7 @@ export default function CommunityChat({ roomId }) {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/users");
+      const response = await fetch(`${API_URL}/api/auth/users`);
       const data = await response.json();
       setAllUsers(data.map(u => ({
         ...u,
@@ -224,7 +227,7 @@ export default function CommunityChat({ roomId }) {
 
   const fetchRoomDetails = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/rooms/${id}`);
+      const response = await fetch(`${API_URL}/api/rooms/${id}`);
       if (response.ok) {
         const data = await response.json();
         setRoomDetails(data);
@@ -416,7 +419,7 @@ export default function CommunityChat({ roomId }) {
 
   const handleConnect = async (user) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromId: userData._id, toId: user._id || user.id })
@@ -440,7 +443,7 @@ export default function CommunityChat({ roomId }) {
 
   const handleAcceptFriend = async (notif) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request/accept", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
@@ -461,7 +464,7 @@ export default function CommunityChat({ roomId }) {
 
   const handleDeclineFriend = async (notif) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request/decline", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request/decline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
@@ -504,7 +507,7 @@ export default function CommunityChat({ roomId }) {
     
     if (window.confirm("Are you sure you want to leave this room?")) {
       try {
-        const response = await fetch("http://localhost:5000/api/rooms/leave", {
+        const response = await fetch(`${API_URL}/api/rooms/leave`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ roomId, userId: userData._id })
@@ -529,7 +532,7 @@ export default function CommunityChat({ roomId }) {
     if (!roomId || roomId === 'general') return;
     
     try {
-      const response = await fetch("http://localhost:5000/api/rooms/join", {
+      const response = await fetch(`${API_URL}/api/rooms/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId, userId: userData._id })

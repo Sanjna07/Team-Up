@@ -12,7 +12,10 @@ import {
 import CreateRoomModal from './components/CreateRoomModal';
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
+const socket = io(SOCKET_URL);
 
 export default function Dashboard() {
   const [userData, setUserData] = useState({ 
@@ -130,7 +133,7 @@ export default function Dashboard() {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/rooms');
+      const response = await fetch(`${API_URL}/api/rooms`);
       const data = await response.json();
       
       const rawUser = localStorage.getItem('user');
@@ -157,7 +160,7 @@ export default function Dashboard() {
   const fetchFriends = async (userId) => {
     if (!userId) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/friends/${userId}`);
+      const response = await fetch(`${API_URL}/api/auth/friends/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setFriends(data);

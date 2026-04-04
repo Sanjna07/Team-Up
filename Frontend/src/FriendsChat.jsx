@@ -14,7 +14,10 @@ import {
 } from 'lucide-react';
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
+const socket = io(SOCKET_URL);
 
 export default function FriendsChat({ initialFriendId }) {
   const [userData, setUserData] = useState({ _id: '', name: 'You', initial: 'Y' });
@@ -75,7 +78,7 @@ export default function FriendsChat({ initialFriendId }) {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/rooms');
+      const response = await fetch(`${API_URL}/api/rooms`);
       const data = await response.json();
       
       const rawUser = localStorage.getItem('user');
@@ -96,7 +99,7 @@ export default function FriendsChat({ initialFriendId }) {
 
   const fetchFriends = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/friends/${userId}`);
+      const response = await fetch(`${API_URL}/api/auth/friends/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setFriends(data);
@@ -227,7 +230,7 @@ export default function FriendsChat({ initialFriendId }) {
 
   const handleAcceptFriend = async (notif) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request/accept", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
@@ -249,7 +252,7 @@ export default function FriendsChat({ initialFriendId }) {
 
   const handleDeclineFriend = async (notif) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request/decline", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request/decline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
