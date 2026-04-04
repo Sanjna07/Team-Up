@@ -8,6 +8,7 @@ import Settings from './Settings.jsx';
 import Quiz from './Quiz.jsx';
 import Matchmaking from './Matchmaking.jsx';
 import CommunityChat from './CommunityChat.jsx';
+import FriendsChat from './FriendsChat.jsx';
 import './index.css';
 
 const path = window.location.pathname;
@@ -24,8 +25,10 @@ createRoot(document.getElementById('root')).render(
       <Quiz />
     ) : path === '/matchmaking' ? (
       <Matchmaking />
-    ) : path === '/community' ? (
-      <CommunityChat />
+    ) : path.startsWith('/community') ? (
+      <CommunityChat roomId={path.split('/')[2]} />
+    ) : path.startsWith('/friends-chat') ? (
+      <FriendsChat initialFriendId={path.split('/')[2]} />
     ) : path === '/welcome' ? (
       <Welcome />
     ) : path === '/contact' ? (

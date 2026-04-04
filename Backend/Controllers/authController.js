@@ -48,6 +48,79 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.sendFriendRequest = async (req, res) => {
+  try {
+    const { fromId, toId } = req.body;
+    const toUser = await User.findById(toId);
+    if (!toUser) return res.status(404).json({ message: "User not found" });
+
+    // Check if request already exists
+    const exists = toUser.friendRequests.find(req => req.from.toString() === fromId);
+    if (exists) return res.status(400).json({ message: "Request already sent" });
+
+    toUser.friendRequests.push({ from: fromId, status: "pending" });
+    await toUser.save();
+
+    res.status(200).json({ message: "Friend request sent" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.acceptFriendRequest = async (req, res) => {
+  try {
+    const { userId, fromId } = req.body;
+    const user = await User.findById(userId);
+    const fromUser = await User.findById(fromId);
+
+    if (!user || !fromUser) return res.status(404).json({ message: "User not found" });
+
+    // Update request status
+    const request = user.friendRequests.find(req => req.from.toString() === fromId);
+    if (!request) return res.status(404).json({ message: "Request not found" });
+    request.status = "accepted";
+
+    // Add to friends list
+    if (!user.friends.includes(fromId)) user.friends.push(fromId);
+    if (!fromUser.friends.includes(userId)) fromUser.friends.push(userId);
+
+    await user.save();
+    await fromUser.save();
+
+    res.status(200).json({ message: "Friend request accepted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.declineFriendRequest = async (req, res) => {
+  try {
+    const { userId, fromId } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Update request status to rejected
+    const request = user.friendRequests.find(req => req.from.toString() === fromId);
+    if (!request) return res.status(404).json({ message: "Request not found" });
+    request.status = "rejected";
+
+    await user.save();
+    res.status(200).json({ message: "Friend request declined" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getFriends = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).populate("friends", "name profileImage personality");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user.friends);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.deleteProfile = async (req, res) => {
   try {
     const { password } = req.body;
@@ -96,18 +169,23 @@ exports.login = async (req, res) => {
       message: "Login successful",
       token,
       user: {
+        _id: user._id,
         id: user._id,
         name: user.name,
         email: user.email,
-        skills: user.skills,
-        domains: user.domains,
-        linkedIn: user.linkedIn,
-        github: user.github,
         profileImage: user.profileImage,
         personality: user.personality
       }
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "name email profileImage personality");
+    res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Bell, MessageCircle, CalendarDays, LogOut, User, Settings, HelpCircle } from 'lucide-react';
+import { 
+  Bell, 
+  MessageCircle, 
+  CalendarDays, 
+  LogOut, 
+  User, 
+  Settings, 
+  HelpCircle,
+  X 
+} from 'lucide-react';
 import CreateRoomModal from './components/CreateRoomModal';
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 export default function Dashboard() {
   const [userData, setUserData] = useState({ 
+    _id: '',
     name: 'there', 
     email: '', 
     initial: 'U', 
@@ -13,26 +26,211 @@ export default function Dashboard() {
   const [activeList, setActiveList] = useState('rooms');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
+  const [rooms, setRooms] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Error loading notifications:", e);
+      return [];
+    }
+  });
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('unreadCounts');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Error loading unread counts:", e);
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('unreadCounts', JSON.stringify(unreadCounts));
+  }, [unreadCounts]);
+
+  const totalRoomsUnread = rooms.reduce((sum, room) => sum + (unreadCounts[room._id] || 0), 0) + (unreadCounts['general'] || 0);
+  const totalFriendsUnread = friends.reduce((sum, friend) => sum + (unreadCounts[friend._id] || 0), 0);
 
   useEffect(() => {
     try {
       const rawUser = localStorage.getItem('user');
       if (rawUser) {
         const parsedUser = JSON.parse(rawUser);
+        const userId = parsedUser._id || parsedUser.id;
         if (parsedUser?.name) {
           setUserData({
+            _id: userId,
             name: parsedUser.name,
             email: parsedUser.email || '',
             initial: parsedUser.name.trim().charAt(0).toUpperCase() || 'U',
             profileImage: parsedUser.profileImage || null,
             personalityTag: parsedUser.personality?.label || null
           });
+          
+          socket.emit("join_room", userId);
+          fetchFriends(userId);
         }
       }
+      
+      // Fetch dynamic rooms
+      fetchRooms();
     } catch (error) {
       console.error('Error parsing user data:', error);
     }
   }, []);
+
+  useEffect(() => {
+    socket.on("notification", (data) => {
+      setNotifications(prev => [data, ...prev]);
+      if (data.type === "friend_accepted") {
+        fetchFriends(userData._id);
+      }
+    });
+
+    socket.on("refresh_friends", () => {
+      fetchFriends(userData._id);
+    });
+
+    socket.on("receive_message", (data) => {
+      console.log("New message in dashboard:", data);
+      const { type, room, sender } = data;
+      const senderId = sender?._id || sender;
+      
+      // Don't count our own messages
+      if (senderId === userData._id) return;
+
+      if (type === "community") {
+        const roomId = room || 'general';
+        setUnreadCounts(prev => ({
+          ...prev,
+          [roomId]: (prev[roomId] || 0) + 1
+        }));
+      } else if (type === "personal") {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [senderId]: (prev[senderId] || 0) + 1
+        }));
+      }
+    });
+
+    return () => {
+      socket.off("notification");
+      socket.off("refresh_friends");
+      socket.off("receive_message");
+    };
+  }, [userData._id]);
+
+  const fetchRooms = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/rooms');
+      const data = await response.json();
+      
+      const rawUser = localStorage.getItem('user');
+      const user = rawUser ? JSON.parse(rawUser) : null;
+      const userId = user?._id || user?.id;
+
+      // Filter rooms user is a member of for the dashboard list
+      const joinedRooms = data.filter(room => 
+        room.members?.some(m => (m._id || m) === userId)
+      );
+      setRooms(joinedRooms);
+      
+      // Join rooms user is a member of for notifications
+      joinedRooms.forEach(room => {
+        socket.emit("join_room", room._id);
+      });
+      // Always join 'general'
+      socket.emit("join_room", "general");
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+    }
+  };
+
+  const fetchFriends = async (userId) => {
+    if (!userId) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/friends/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setFriends(data);
+      }
+    } catch (err) {
+      console.error("Error fetching friends:", err);
+    }
+  };
+
+  const handleAcceptFriend = async (notif) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/friend-request/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
+      });
+
+      if (response.ok) {
+        socket.emit("accept_friend_request", {
+          fromId: notif.fromId,
+          toUser: { _id: userData._id, name: userData.name }
+        });
+        setNotifications(prev => prev.filter(n => n !== notif));
+        fetchFriends(userData._id);
+        alert("Friend request accepted!");
+      }
+    } catch (err) {
+      console.error("Error accepting friend:", err);
+    }
+  };
+
+  const handleDeclineFriend = async (notif) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/friend-request/decline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(n => n !== notif));
+        alert("Friend request declined.");
+      }
+    } catch (err) {
+      console.error("Error declining friend:", err);
+    }
+  };
+
+  const handleMarkAsRead = (notif) => {
+    setNotifications(prev => prev.map(n => n === notif ? { ...n, read: true } : n));
+  };
+
+  const handleRemoveNotification = (notif) => {
+    setNotifications(prev => prev.filter(n => n !== notif));
+  };
+
+  const handleNotificationClick = (notif) => {
+    if (!notif) return;
+    
+    // Mark as read when clicked
+    handleMarkAsRead(notif);
+
+    if (notif.type === "community") {
+      window.location.href = `/community/${notif.roomId || 'general'}`;
+    } else if (notif.type === "personal") {
+      if (notif.senderId) {
+        window.location.href = `/friends-chat/${notif.senderId}`;
+      }
+    } else if (notif.type === "friend_request") {
+      setActiveList('friends');
+      setShowNotifications(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -55,9 +253,87 @@ export default function Dashboard() {
             />
           </a>
           <div className="flex items-center gap-4">
-            <button className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center hover:bg-emerald-100 transition-colors">
-              <Bell className="w-5 h-5" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center hover:bg-emerald-100 transition-colors relative"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.length > 0 && notifications.some(n => !n.read) && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-3 w-72 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-[60]">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <p className="text-sm font-bold text-gray-900">Notifications</p>
+                    {notifications.some(n => !n.read) && (
+                      <button 
+                        onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                        className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <p className="text-xs text-gray-500 text-center py-4">No new notifications</p>
+                    ) : (
+                      notifications.map((notif, i) => (
+                        <div 
+                          key={i} 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleNotificationClick(notif);
+                          }}
+                          className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer group relative ${notif.read ? 'opacity-60' : ''}`}
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <p className="text-xs font-medium text-gray-900 flex-1">{notif.content}</p>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleRemoveNotification(notif); }}
+                              className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-2">
+                            {notif.type === "friend_request" && (
+                              <>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleAcceptFriend(notif); }}
+                                  className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase rounded-lg hover:bg-emerald-700 transition-colors"
+                                >
+                                  Accept
+                                </button>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleDeclineFriend(notif); }}
+                                  className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase rounded-lg hover:bg-gray-300 transition-colors"
+                                >
+                                  Decline
+                                </button>
+                              </>
+                            )}
+                            {!notif.read && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleMarkAsRead(notif); }}
+                                className="text-[10px] font-bold text-emerald-600 hover:underline uppercase"
+                              >
+                                Mark as read
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-1">{new Date().toLocaleTimeString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
@@ -138,10 +414,15 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center gap-3 justify-end">
             <button 
               onClick={() => window.location.href = '/community'}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors relative"
             >
               <MessageCircle className="w-4 h-4" />
               Community Chat
+              {totalRoomsUnread > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-black text-white shadow-lg shadow-emerald-600/20 ">
+                  {totalRoomsUnread > 9 ? '9+' : totalRoomsUnread}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => setIsCreateRoomOpen(true)}
@@ -235,19 +516,29 @@ export default function Dashboard() {
                   />
                   <button
                     onClick={() => setActiveList('rooms')}
-                    className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                       activeList === 'rooms' ? 'text-emerald-700' : 'text-emerald-600'
                     }`}
                   >
                     Rooms
+                    {totalRoomsUnread > 0 && (
+                      <span className="w-4 h-4 bg-emerald-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                        {totalRoomsUnread > 9 ? '9+' : totalRoomsUnread}
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => setActiveList('friends')}
-                    className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                       activeList === 'friends' ? 'text-emerald-700' : 'text-emerald-600'
                     }`}
                   >
                     Friends
+                    {totalFriendsUnread > 0 && (
+                      <span className="w-4 h-4 bg-emerald-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                        {totalFriendsUnread > 9 ? '9+' : totalFriendsUnread}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -257,54 +548,49 @@ export default function Dashboard() {
                 }`}
               >
                 {activeList === 'rooms'
-                  ? ['Prototype Sprint', 'Design Circle', 'Late Night Build'].map((room) => (
-                      <div key={room} className="flex items-center gap-4 border border-emerald-100 rounded-2xl px-4 py-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-semibold">
-                          {room.charAt(0)}
+                  ? rooms.length > 0 ? rooms.map((room) => (
+                      <div key={room._id} className="flex items-center gap-4 border border-emerald-100 rounded-2xl px-4 py-3 hover:bg-emerald-50 transition-colors cursor-pointer group relative" onClick={() => window.location.href = `/community/${room._id}`}>
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-semibold uppercase group-hover:bg-emerald-200 transition-colors">
+                          {room.name.charAt(0)}
                         </div>
-                        <div>
-                          <p className="text-gray-800 font-semibold">{room}</p>
-                          <p className="text-sm text-gray-600">Active now</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-800 font-semibold truncate group-hover:text-emerald-700 transition-colors">{room.name}</p>
+                          <p className="text-xs text-gray-600 truncate">{room.domain} • {room.membersCount} members</p>
                         </div>
-                      </div>
-                    ))
-                  : [
-                      {
-                        name: 'Aanya Kapoor',
-                        tag: 'Night Owl',
-                        status: 'Building now',
-                        avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-                      },
-                      {
-                        name: 'Rishi Mehta',
-                        tag: 'Problem Solver',
-                        status: 'Available to chat',
-                        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-                      },
-                      {
-                        name: 'Neha Singh',
-                        tag: 'Creative Mind',
-                        status: 'Working on idea',
-                        avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-                      },
-                    ].map((friend) => (
-                      <div key={friend.name} className="flex items-center gap-4 border border-emerald-100 rounded-2xl px-4 py-3">
-                        <img
-                          src={friend.avatar}
-                          alt={friend.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-gray-800 font-semibold">{friend.name}</p>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-100">
-                              {friend.tag}
-                            </span>
+                        {unreadCounts[room._id] > 0 && (
+                          <div className="flex-shrink-0 w-6 h-6 bg-emerald-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                            {unreadCounts[room._id] > 9 ? '9+' : unreadCounts[room._id]}
                           </div>
-                          <p className="text-sm text-gray-600">{friend.status}</p>
-                        </div>
+                        )}
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-500">No rooms found. Create one!</p>
+                      </div>
+                    )
+                  : friends.length > 0 ? friends.map((friend) => (
+                      <div key={friend._id} className="flex items-center gap-4 border border-emerald-100 rounded-2xl px-4 py-3 hover:bg-emerald-50 transition-colors cursor-pointer group relative" onClick={() => window.location.href = `/friends-chat/${friend._id}`}>
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-semibold uppercase group-hover:scale-105 transition-transform">
+                            {friend.name.charAt(0)}
+                          </div>
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-800 font-semibold truncate group-hover:text-emerald-700 transition-colors">{friend.name}</p>
+                          <p className="text-xs text-gray-600 truncate">{friend.personality?.label || 'Member'}</p>
+                        </div>
+                        {unreadCounts[friend._id] > 0 && (
+                          <div className="flex-shrink-0 w-6 h-6 bg-emerald-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-lg shadow-emerald-600/20 ">
+                            {unreadCounts[friend._id] > 9 ? '9+' : unreadCounts[friend._id]}
+                          </div>
+                        )}
+                      </div>
+                    )) : (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-500">No friends yet. Connect with people in community chat!</p>
+                      </div>
+                    )}
               </div>
             </div>
           </div>

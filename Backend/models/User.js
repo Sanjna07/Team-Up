@@ -20,7 +20,12 @@ const userSchema = new mongoose.Schema({
   reputation: {
     completedProjects: { type: Number, default: 0 },
     rating: { type: Number, default: 0 }
-  }
+  },
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  friendRequests: [{
+    from: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" }
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);
