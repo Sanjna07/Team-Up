@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { register , login, getProfile, updateProfile, deleteProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, declineFriendRequest, getFriends } = require("../Controllers/authController");
+const { register , login, getProfile, updateProfile, deleteProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, declineFriendRequest, getFriends } = require("../controllers/authController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 router.post("/register", register);

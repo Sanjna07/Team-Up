@@ -21,11 +21,21 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use("/api/auth", require("./Routes/authRoutes"));
-app.use("/api/rooms", require("./Routes/roomRoutes"));
-app.use("/api/messages", require("./Routes/messageRoutes"));
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/rooms", require("./routes/roomRoutes"));
+app.use("/api/messages", require("./routes/messageRoutes"));
+app.use("/api/events", require("./routes/eventRoutes"));
 
-const { saveMessage } = require("./Controllers/messageController");
+const { startEventFetcher, runManualFetch } = require("./jobs/eventFetcher");
+// start 24h cron job
+startEventFetcher();
+
+// Run an initial fetch if the database is empty or on startup to populate immediately
+runManualFetch();
+
+
+
+const { saveMessage } = require("./controllers/messageController");
 
 // Socket.io
 io.on("connection", (socket) => {
@@ -98,8 +108,8 @@ io.on("connection", (socket) => {
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB Connected");
-    server.listen(process.env.PORT, () => {
-      console.log(`Server running on port ${process.env.PORT}`);
-    });
   })
-  .catch(err => console.log(err));
+  .catch((err) => console.log(err));
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

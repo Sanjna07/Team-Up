@@ -7,7 +7,8 @@ import {
   User, 
   Settings, 
   HelpCircle,
-  X 
+  X,
+  RefreshCw 
 } from 'lucide-react';
 import CreateRoomModal from './components/CreateRoomModal';
 import { io } from "socket.io-client";
@@ -50,6 +51,8 @@ export default function Dashboard() {
       return {};
     }
   });
+  const [events, setEvents] = useState([]);
+  const [isEventsLoading, setIsEventsLoading] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('notifications', JSON.stringify(notifications));
@@ -85,10 +88,29 @@ export default function Dashboard() {
       
       // Fetch dynamic rooms
       fetchRooms();
+      // Fetch events
+      fetchEvents();
     } catch (error) {
       console.error('Error parsing user data:', error);
     }
   }, []);
+
+  const fetchEvents = async () => {
+    setIsEventsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/events/upcoming`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setEvents(result.data);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    } finally {
+      setIsEventsLoading(false);
+    }
+  };
 
   useEffect(() => {
     socket.on("notification", (data) => {
@@ -450,27 +472,46 @@ export default function Dashboard() {
                     <h3 className="text-2xl font-semibold text-gray-900">Stay on track</h3>
                   </div>
                 </div>
+                <button 
+                  onClick={fetchEvents}
+                  disabled={isEventsLoading}
+                  className={`p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 transition-all ${isEventsLoading ? 'animate-spin' : ''}`}
+                  title="Refresh events"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </button>
               </div>
-              <div className="space-y-4">
-                {[
-                  { name: 'Hack the Future Summit', date: 'Apr 18', url: '#' },
-                  { name: 'AI Build Week', date: 'Apr 27', url: '#' },
-                  { name: 'Green Tech Sprint', date: 'May 05', url: '#' },
-                  { name: 'Fintech Fusion Hack', date: 'May 22', url: '#' },
-                ].map((event) => (
-                  <div key={event.name} className="flex items-center justify-between border border-emerald-100 rounded-2xl px-4 py-3">
-                    <div>
-                      <p className="text-sm text-emerald-700 font-semibold">{event.date}</p>
-                      <p className="text-gray-800 font-medium">{event.name}</p>
-                    </div>
-                    <a
-                      href={event.url}
-                      className="text-emerald-700 border border-emerald-200 px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-emerald-50 transition-colors"
-                    >
-                      Link
-                    </a>
+              <div className="max-h-[400px] overflow-y-auto pr-2 no-scrollbar space-y-4">
+                {isEventsLoading ? (
+                  <div className="text-center py-10">
+                    <div className="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500 font-medium">Surfing the web for hackathons...</p>
                   </div>
-                ))}
+                ) : events.length > 0 ? (
+                  events.slice(0, 15).map((event) => (
+                    <div key={event._id} className="flex items-center justify-between border border-emerald-100 rounded-2xl px-4 py-3 hover:shadow-sm transition-shadow group">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-emerald-700 font-bold uppercase tracking-tight">
+                          {event.registrationDeadline ? new Date(event.registrationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}
+                        </p>
+                        <p className="text-gray-800 font-bold truncate pr-2" title={event.title}>{event.title}</p>
+                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{event.source}</p>
+                      </div>
+                      <a
+                        href={event.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-600 border border-emerald-200 px-5 py-2 rounded-xl text-sm font-black hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all active:scale-95 shadow-sm"
+                      >
+                        Link
+                      </a>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">No upcoming events found. Try refreshing!</p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="bg-white border border-gray-100 rounded-3xl p-7 shadow-sm hover:shadow-md transition-shadow">

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createRoom, getRooms, getRoomById, leaveRoom, joinRoom } = require("../Controllers/roomController");
+const { createRoom, getRooms, getRoomById, leaveRoom, joinRoom } = require("../controllers/roomController");
 
 router.post("/", createRoom);
 router.get("/", getRooms);
