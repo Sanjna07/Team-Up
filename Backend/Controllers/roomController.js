@@ -1,4 +1,5 @@
 const Room = require("../models/Room");
+const { syncRoom, syncRoomJoin } = require("../services/syncService");
 
 exports.createRoom = async (req, res) => {
   try {
@@ -14,6 +15,17 @@ exports.createRoom = async (req, res) => {
     });
 
     const savedRoom = await newRoom.save();
+    
+    // Sync to Neo4j
+    await syncRoom(savedRoom);
+    // Sync the creator joining the room
+    await syncRoomJoin(createdBy, savedRoom._id);
+    if (members && members.length > 0) {
+      for (const mId of members) {
+        await syncRoomJoin(mId, savedRoom._id);
+      }
+    }
+
     res.status(201).json(savedRoom);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -73,6 +85,10 @@ exports.joinRoom = async (req, res) => {
     room.membersCount = room.members.length;
 
     await room.save();
+    
+    // Sync to Neo4j
+    await syncRoomJoin(userId, roomId);
+
     res.status(200).json({ message: "Joined room successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });

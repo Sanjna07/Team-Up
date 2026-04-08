@@ -25,6 +25,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/rooms", require("./routes/roomRoutes"));
 app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/events", require("./routes/eventRoutes"));
+app.use("/api/matchmaking", require("./routes/matchmakingRoutes"));
 
 const { startEventFetcher, runManualFetch } = require("./jobs/eventFetcher");
 // start 24h cron job
@@ -104,10 +105,13 @@ io.on("connection", (socket) => {
   });
 });
 
+const { initNeo4j } = require("./config/neo4j");
+
 // Connect DB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB Connected");
+    initNeo4j(); // Initialize Neo4j after MongoDB
   })
   .catch((err) => console.log(err));
 

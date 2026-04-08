@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { syncUser, syncFriendship } = require("../services/syncService");
 
 exports.register = async (req, res) => {
   try {
@@ -26,6 +27,9 @@ exports.register = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d"
     });
+
+    // Sync to Neo4j
+    await syncUser(user);
 
     res.status(201).json({
       message: "User registered successfully",
@@ -86,6 +90,9 @@ exports.acceptFriendRequest = async (req, res) => {
 
     await user.save();
     await fromUser.save();
+
+    // Sync to Neo4j
+    await syncFriendship(userId, fromId);
 
     res.status(200).json({ message: "Friend request accepted" });
   } catch (error) {
@@ -224,6 +231,9 @@ exports.updateProfile = async (req, res) => {
     }
 
     await user.save();
+
+    // Sync to Neo4j
+    await syncUser(user);
 
     res.status(200).json({
       message: "Profile updated successfully",

@@ -1,91 +1,81 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Search, UserPlus, MessageCircle, ChevronDown, X, Code, Sparkles } from 'lucide-react';
+import { ArrowLeft, Search, UserPlus, MessageCircle, ChevronDown, X, Sparkles, Loader2 } from 'lucide-react';
 
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'Aanya Kapoor',
-    personality: 'Night Owl',
-    skills: ['React', 'Tailwind', 'Node.js'],
-    bio: 'Full-stack dev who loves building late at night.',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
-  },
-  {
-    id: '2',
-    name: 'Rishi Mehta',
-    personality: 'Code Ninja',
-    skills: ['Python', 'AI', 'FastAPI'],
-    bio: 'Problem solver and machine learning enthusiast.',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-  },
-  {
-    id: '3',
-    name: 'Neha Singh',
-    personality: 'Vibe Manager',
-    skills: ['UI/UX', 'Figma', 'Prototyping'],
-    bio: 'Creative mind focused on clean and accessible designs.',
-    avatar: 'https://randomuser.me/api/portraits/women/68.jpg'
-  },
-  {
-    id: '4',
-    name: 'Kabir Verma',
-    personality: 'Speedrunner',
-    skills: ['Go', 'Kubernetes', 'Docker'],
-    bio: 'DevOps wizard building scalable infra at light speed.',
-    avatar: 'https://randomuser.me/api/portraits/men/45.jpg'
-  },
-  {
-    id: '5',
-    name: 'Ishani Roy',
-    personality: 'Architect',
-    skills: ['Java', 'Spring Boot', 'SQL'],
-    bio: 'Loves designing complex systems and robust APIs.',
-    avatar: 'https://randomuser.me/api/portraits/women/33.jpg'
-  },
-  {
-    id: '6',
-    name: 'Arjun Das',
-    personality: 'AI Whisperer',
-    skills: ['Next.js', 'LangChain', 'OpenAI'],
-    bio: 'Building the next generation of AI-powered apps.',
-    avatar: 'https://randomuser.me/api/portraits/men/12.jpg'
-  }
-];
+const COMMON_SKILLS = [
+  'React', 'Node.js', 'Python', 'AI', 'Tailwind',
+  'FastAPI', 'UI/UX', 'Figma', 'Go', 'Docker',
+  'Java', 'Spring Boot', 'SQL', 'Next.js'
+].sort();
 
-const ALL_SKILLS = Array.from(new Set(MOCK_USERS.flatMap(u => u.skills))).sort();
-const ALL_PERSONALITIES = Array.from(new Set(MOCK_USERS.map(u => u.personality))).sort();
+const COMMON_DOMAINS = [
+  'Web Development', 'AI/ML', 'DevOps', 'Design',
+  'Backend', 'Frontend', 'App Development'
+].sort();
 
 export default function Matchmaking() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSkill, setSelectedSkill] = useState('');
-  const [selectedPersonality, setSelectedPersonality] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState(MOCK_USERS);
+  const [selectedDomain, setSelectedDomain] = useState('');
+  
+  const [recommendedUsers, setRecommendedUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [friends, setFriends] = useState([]);
 
   useEffect(() => {
-    const results = MOCK_USERS.filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.personality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesSkill = !selectedSkill || user.skills.includes(selectedSkill);
-      const matchesPersonality = !selectedPersonality || user.personality === selectedPersonality;
+    fetchRecommendations();
+  }, [selectedSkill, selectedDomain]);
 
-      return matchesSearch && matchesSkill && matchesPersonality;
-    });
-    setFilteredUsers(results);
-  }, [searchTerm, selectedSkill, selectedPersonality]);
+  const fetchRecommendations = async () => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      if (selectedSkill) queryParams.append('skills', selectedSkill);
+      if (selectedDomain) queryParams.append('domains', selectedDomain);
 
-  const handleAddFriend = (userId) => {
-    if (!friends.includes(userId)) {
-      setFriends([...friends, userId]);
+      // We rely on the auth token in localStorage. Make sure this key matches your app's actual localStorage key
+      const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+
+      const response = await fetch(`http://localhost:5000/api/matchmaking?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setRecommendedUsers(data.recommendations);
+      }
+    } catch (error) {
+      console.error("Failed to fetch recommendations", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Local search filter combined with backend's returned data
+  const filteredUsers = recommendedUsers.filter(user => {
+    if (!searchTerm) return true;
+    return user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           user.personality?.label?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           user.skills?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
+
+  const handleAddFriend = async (user) => {
+    try {
+      // Optioanlly make an API call to send the formal friend request
+      // await fetch("http://localhost:5000/api/auth/friend-request", ...)
+      if (!friends.includes(user.id)) {
+        setFriends([...friends, user.id]);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedSkill('');
-    setSelectedPersonality('');
+    setSelectedDomain('');
   };
 
   return (
@@ -101,7 +91,7 @@ export default function Matchmaking() {
             Dashboard
           </button>
           <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-2">Matchmaking</h1>
-          <p className="text-gray-500 font-medium">Find the perfect squad based on vibe and skill</p>
+          <p className="text-gray-500 font-medium">Powered by AI and graph connections.</p>
         </div>
 
         {/* Filters Section */}
@@ -127,7 +117,7 @@ export default function Matchmaking() {
                 className="w-full pl-4 pr-10 py-3 bg-gray-50 hover:bg-emerald-50 border-none rounded-2xl font-bold text-gray-600 text-sm appearance-none cursor-pointer transition-colors outline-none"
               >
                 <option value="">Any Skill</option>
-                {ALL_SKILLS.map(skill => (
+                {COMMON_SKILLS.map(skill => (
                   <option key={skill} value={skill}>{skill}</option>
                 ))}
               </select>
@@ -136,22 +126,23 @@ export default function Matchmaking() {
 
             <div className="relative group w-full sm:w-48">
               <select
-                value={selectedPersonality}
-                onChange={(e) => setSelectedPersonality(e.target.value)}
+                value={selectedDomain}
+                onChange={(e) => setSelectedDomain(e.target.value)}
                 className="w-full pl-4 pr-10 py-3 bg-gray-50 hover:bg-emerald-50 border-none rounded-2xl font-bold text-gray-600 text-sm appearance-none cursor-pointer transition-colors outline-none"
               >
-                <option value="">Any Style</option>
-                {ALL_PERSONALITIES.map(p => (
-                  <option key={p} value={p}>{p}</option>
+                <option value="">Any Domain</option>
+                {COMMON_DOMAINS.map(d => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
 
-            {(searchTerm || selectedSkill || selectedPersonality) && (
+            {(searchTerm || selectedSkill || selectedDomain) && (
               <button 
                 onClick={clearFilters}
-                className="p-3 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-2xl transition-all"
+                title="Clear Filters"
+                className="p-3 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-2xl transition-all flex items-center justify-center shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -160,21 +151,44 @@ export default function Matchmaking() {
         </div>
 
         {/* Results Grid */}
-        {filteredUsers.length > 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Loader2 className="w-12 h-12 mb-4 animate-spin text-emerald-500" />
+            <p className="font-bold">Analyzing profiles and graph connections...</p>
+          </div>
+        ) : filteredUsers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user) => {
+               // Calculate display score (normalize to 100%)
+               const matchPercentage = Math.min(100, Math.round(((user.scores?.total || 1) / 15) * 100));
+
+               return (
               <div key={user.id} className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-md hover:shadow-2xl hover:shadow-emerald-100/30 transition-all duration-300 group relative overflow-hidden hover:-translate-y-2">
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-gray-50 border-4 border-gray-50 group-hover:border-emerald-50 transition-all">
+                <div className="absolute top-0 right-0 p-4">
+                     <div className="flex flex-col items-end gap-1">
+                        <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-black">
+                            <Sparkles className="w-3 h-3 text-emerald-500" />
+                            {matchPercentage}% Match
+                        </span>
+                        {user.scores?.mutualFriends > 0 && (
+                           <span className="text-[10px] text-gray-400 font-bold px-2">
+                             {user.scores.mutualFriends} Mutual Friend{user.scores.mutualFriends !== 1 ? 's' : ''}
+                           </span>
+                        )}
+                     </div>
+                </div>
+
+                <div className="flex items-start justify-between mb-8 mt-2">
+                  <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-gray-50 border-4 border-gray-50 group-hover:border-emerald-50 transition-all flex shrink-0">
                     <img
-                      src={user.avatar}
+                      src={user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0D8ABC&color=fff`}
                       alt={user.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => handleAddFriend(user.id)}
+                      onClick={() => handleAddFriend(user)}
                       disabled={friends.includes(user.id)}
                       className={`p-3 rounded-2xl transition-all ${
                         friends.includes(user.id) 
@@ -193,27 +207,30 @@ export default function Matchmaking() {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-2xl font-black text-gray-900 tracking-tight">{user.name}</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest border-2 border-white shadow-sm">
-                        {user.personality}
-                      </span>
-                    </div>
+                    {user.personality?.label && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-white shadow-sm">
+                          {user.personality.label}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                    {user.bio}
-                  </p>
-
                   <div className="pt-2 flex flex-wrap gap-2">
-                    {user.skills.map((skill) => (
-                      <span key={skill} className="px-4 py-1.5 bg-gray-50 text-gray-600 rounded-xl text-[11px] font-bold border border-gray-100 group-hover:border-emerald-100 transition-colors">
+                    {(user.skills || []).map((skill) => (
+                      <span key={skill} className="px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl text-[11px] font-bold border border-emerald-100 transition-colors">
                         {skill}
+                      </span>
+                    ))}
+                    {(user.domains || []).slice(0, 2).map((domain) => (
+                      <span key={domain} className="px-4 py-1.5 bg-gray-50 text-gray-600 rounded-xl text-[11px] font-bold border border-gray-100 transition-colors">
+                        {domain}
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         ) : (
           <div className="text-center py-32 bg-white rounded-[4rem] border-2 border-dashed border-gray-100">
@@ -221,7 +238,7 @@ export default function Matchmaking() {
               <Search className="w-10 h-10 text-gray-200" />
             </div>
             <h3 className="text-2xl font-black text-gray-900 mb-2">No matches in sight</h3>
-            <p className="text-gray-500 font-medium max-w-xs mx-auto">Try loosening your filters to find more potential squad members</p>
+            <p className="text-gray-500 font-medium max-w-xs mx-auto">Try loosening your filters to find more potential squad members.</p>
             <button 
               onClick={clearFilters}
               className="mt-8 px-8 py-3 bg-emerald-700 text-white rounded-full font-bold text-sm hover:bg-emerald-800 transition-all"
