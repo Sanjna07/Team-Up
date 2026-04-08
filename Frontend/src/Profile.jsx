@@ -206,7 +206,7 @@ export default function Profile() {
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-gray-700">Full Name</label>
                     <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-wider">
-                      {formData.personalityTag || "Speedrunner"}
+                      {formData.personalityTag || "Member"}
                     </span>
                   </div>
                   <input

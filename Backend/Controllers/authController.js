@@ -219,7 +219,8 @@ exports.updateProfile = async (req, res) => {
     user.profileImage = profileImage || user.profileImage;
     
     if (personality?.label) {
-      user.personality = { ...user.personality, label: personality.label };
+      if (!user.personality) user.personality = {};
+      user.personality.label = personality.label;
     }
 
     await user.save();

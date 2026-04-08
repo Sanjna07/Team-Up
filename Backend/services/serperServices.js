@@ -15,6 +15,53 @@ const extractDate = (text) => {
   return null;
 };
 
+// Validates if the given link is a specific event page and not a generic list or irrelevant site.
+const isValidEventLink = (urlStr) => {
+  try {
+    const url = new URL(urlStr);
+    const hostname = url.hostname.replace(/^www\./, "").toLowerCase();
+    const pathname = url.pathname.replace(/\/$/, ""); // remove trailing slash
+
+    // 1. Filter out unwanted domains (social media, video platforms, forums, github)
+    const rejectedDomains = [
+      "youtube.com", "youtu.be", "linkedin.com", "instagram.com", 
+      "facebook.com", "twitter.com", "x.com", "github.com",
+      "reddit.com", "quora.com", "medium.com", "pinterest.com"
+    ];
+    if (rejectedDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
+      return false;
+    }
+
+    // 2. Reject root paths or generic landing/auth pages
+    if (!pathname || pathname === "" || pathname === "/") return false;
+    const genericPaths = ["/dashboard", "/login", "/signup", "/register", "/about", "/contact", "/home"];
+    if (genericPaths.includes(pathname.toLowerCase())) return false;
+
+    // 3. Platform-specific filtering (reject main directory/listing pages)
+    if (hostname.includes("unstop.com")) {
+      const listingPages = ["/hackathons", "/competitions", "/events", "/internships", "/jobs", "/courses"];
+      if (listingPages.includes(pathname.toLowerCase())) return false;
+    }
+
+    if (hostname.includes("devfolio.co")) {
+      const listingPages = ["/hackathons", "/projects"];
+      if (listingPages.includes(pathname.toLowerCase())) return false;
+    }
+
+    if (hostname.includes("mlh.io")) {
+      if (pathname.toLowerCase() === "/events" || pathname.toLowerCase().startsWith("/seasons")) return false;
+    }
+
+    if (hostname.includes("devpost.com")) {
+      if (pathname.toLowerCase() === "/hackathons") return false;
+    }
+
+    return true;
+  } catch (err) {
+    return false; // Invalid URL
+  }
+};
+
 exports.fetchEventsFromSerper = async () => {
   // Ensure API Key exists
   if (!process.env.SERPER_API_KEY) {
@@ -22,11 +69,15 @@ exports.fetchEventsFromSerper = async () => {
     return [];
   }
 
+  const currentYear = new Date().getFullYear();
+  const nextYear = currentYear + 1;
+
+  // Refined queries aiming for actual event pages using site: operators
   const queries = [
-    "upcoming hackathons 2026 devfolio",
-    "coding competitions 2026 unstop",
-    "MLH upcoming hackathons 2026",
-    "major league hacking events 2026"
+    `site:unstop.com/hackathons OR site:unstop.com/competitions hackathon ${currentYear} OR ${nextYear}`,
+    `site:devfolio.co hackathon ${currentYear} OR ${nextYear}`,
+    `site:devpost.com hackathon ${currentYear} OR ${nextYear}`,
+    `"registration open" MLH hackathon ${currentYear} OR ${nextYear}`
   ];
 
   let allResults = [];
@@ -40,24 +91,25 @@ exports.fetchEventsFromSerper = async () => {
           "X-API-KEY": process.env.SERPER_API_KEY,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ q: query, num: 10 })
+        body: JSON.stringify({ q: query, num: 20 }) // Fetch more to account for filtered out results
       });
 
       const data = await res.json();
 
       if (data.organic) {
         data.organic.forEach(item => {
-          if (!seenLinks.has(item.link)) {
+          if (!seenLinks.has(item.link) && isValidEventLink(item.link)) {
             let hostname = 'External';
             try {
-              hostname = new URL(item.link).hostname.replace('www.', '');
+              hostname = new URL(item.link).hostname.replace(/^www\./, '');
             } catch (e) {}
 
             allResults.push({
               title: item.title,
               link: item.link,
               description: item.snippet,
-              registrationDeadline: extractDate(item.snippet) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default to 30 days if not found
+              // Default to 30 days if not found
+              registrationDeadline: extractDate(item.snippet) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 
               source: hostname
             });
             seenLinks.add(item.link);

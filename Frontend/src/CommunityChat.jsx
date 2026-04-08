@@ -710,15 +710,20 @@ export default function CommunityChat({ roomId }) {
                   <div key={msg.id} className={`flex gap-4 group ${isMe ? 'flex-row-reverse' : ''}`}>
                     <div 
                       className={`w-12 h-12 rounded-2xl ${msg.color || (isMe ? 'bg-emerald-700' : 'bg-emerald-600')} flex-shrink-0 flex items-center justify-center font-bold text-white shadow-sm cursor-pointer hover:scale-105 transition-transform`}
-                      onClick={() => !isMe && handlePfpClick({ 
-                        _id: msg.sender?._id || msg.sender,
-                        id: msg.sender?._id || msg.sender,
-                        name: msg.user || msg.sender?.name, 
-                        initial: msg.initial || (msg.user || msg.sender?.name)?.charAt(0).toUpperCase(), 
-                        status: 'online', 
-                        role: 'Member', 
-                        bio: 'TeamUp Community member.' 
-                      })}
+                      onClick={() => {
+                        if (!isMe) {
+                          const foundUser = allUsers.find(u => u.id === (msg.sender?._id || msg.sender));
+                          handlePfpClick({ 
+                            _id: msg.sender?._id || msg.sender,
+                            id: msg.sender?._id || msg.sender,
+                            name: msg.user || msg.sender?.name, 
+                            initial: msg.initial || (msg.user || msg.sender?.name)?.charAt(0).toUpperCase(), 
+                            status: 'online', 
+                            role: foundUser ? foundUser.role : (msg.sender?.personality?.label || 'Member'), 
+                            bio: foundUser ? foundUser.bio : 'TeamUp Community member.' 
+                          });
+                        }
+                      }}
                     >
                       {msg.initial || (msg.user || msg.sender?.name)?.charAt(0).toUpperCase()}
                     </div>
@@ -726,15 +731,20 @@ export default function CommunityChat({ roomId }) {
                       <div className={`flex items-center gap-2 mb-1 ${isMe ? 'justify-end' : ''}`}>
                         <span 
                           className="font-bold text-gray-900 hover:text-emerald-700 cursor-pointer transition-colors"
-                          onClick={() => !isMe && handlePfpClick({ 
-                            _id: msg.sender?._id || msg.sender,
-                            id: msg.sender?._id || msg.sender,
-                            name: msg.user || msg.sender?.name, 
-                            initial: msg.initial || (msg.user || msg.sender?.name)?.charAt(0).toUpperCase(), 
-                            status: 'online', 
-                            role: 'Member', 
-                            bio: 'TeamUp Community member.' 
-                          })}
+                          onClick={() => {
+                            if (!isMe) {
+                              const foundUser = allUsers.find(u => u.id === (msg.sender?._id || msg.sender));
+                              handlePfpClick({ 
+                                _id: msg.sender?._id || msg.sender,
+                                id: msg.sender?._id || msg.sender,
+                                name: msg.user || msg.sender?.name, 
+                                initial: msg.initial || (msg.user || msg.sender?.name)?.charAt(0).toUpperCase(), 
+                                status: 'online', 
+                                role: foundUser ? foundUser.role : (msg.sender?.personality?.label || 'Member'), 
+                                bio: foundUser ? foundUser.bio : 'TeamUp Community member.' 
+                              });
+                            }
+                          }}
                         >
                           {msg.user || msg.sender?.name}
                         </span>
