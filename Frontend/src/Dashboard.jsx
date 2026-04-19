@@ -13,8 +13,8 @@ import {
 import CreateRoomModal from './components/CreateRoomModal';
 import { io } from "socket.io-client";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || `${API_URL}`;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || `${API_URL}`;
 
 const socket = io(SOCKET_URL);
 
@@ -194,7 +194,7 @@ export default function Dashboard() {
 
   const handleAcceptFriend = async (notif) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request/accept", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })
@@ -216,7 +216,7 @@ export default function Dashboard() {
 
   const handleDeclineFriend = async (notif) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/friend-request/decline", {
+      const response = await fetch(`${API_URL}/api/auth/friend-request/decline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userData._id, fromId: notif.fromId })

@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { io } from "socket.io-client";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || `${API_URL}`;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || `${API_URL}`;
 
 const socket = io(SOCKET_URL);
 
@@ -267,7 +267,7 @@ export default function CommunityChat({ roomId }) {
 
   const fetchCommunityHistory = async (roomId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/community/${roomId}`);
+      const response = await fetch(`${API_URL}/api/messages/community/${roomId}`);
       const data = await response.json();
       if (Array.isArray(data)) {
         const formattedMsgs = data.map(msg => ({
@@ -285,7 +285,7 @@ export default function CommunityChat({ roomId }) {
 
   const fetchPersonalHistory = async (otherId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/personal/${userData._id}/${otherId}`);
+      const response = await fetch(`${API_URL}/api/messages/personal/${userData._id}/${otherId}`);
       const data = await response.json();
       if (Array.isArray(data)) {
         const formattedMsgs = data.map(msg => ({

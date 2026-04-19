@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { X, Link, Search, UserPlus, Check } from 'lucide-react';
 
+
+const API_URL = import.meta.env.VITE_API_URL || `${API_URL}`;
 export default function CreateRoomModal({ isOpen, onClose }) {
   const [roomData, setRoomData] = useState({
     name: '',
@@ -20,7 +22,7 @@ export default function CreateRoomModal({ isOpen, onClose }) {
   const fetchFriends = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const response = await fetch(`http://localhost:5000/api/auth/friends/${user._id || user.id}`);
+      const response = await fetch(`${API_URL}/api/auth/friends/${user._id || user.id}`);
       if (response.ok) {
         const data = await response.json();
         setFriends(data);
@@ -36,7 +38,7 @@ export default function CreateRoomModal({ isOpen, onClose }) {
     e.preventDefault();
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const response = await fetch('http://localhost:5000/api/rooms', {
+      const response = await fetch(`${API_URL}/api/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Search, UserPlus, MessageCircle, ChevronDown, X, Sparkles, Loader2 } from 'lucide-react';
 
+
+const API_URL = import.meta.env.VITE_API_URL || `${API_URL}`;
 const COMMON_SKILLS = [
   'React', 'Node.js', 'Python', 'AI', 'Tailwind',
   'FastAPI', 'UI/UX', 'Figma', 'Go', 'Docker',
@@ -35,7 +37,7 @@ export default function Matchmaking() {
       // We rely on the auth token in localStorage. Make sure this key matches your app's actual localStorage key
       const token = localStorage.getItem("token") || localStorage.getItem("userToken");
 
-      const response = await fetch(`http://localhost:5000/api/matchmaking?${queryParams.toString()}`, {
+      const response = await fetch(`${API_URL}/api/matchmaking?${queryParams.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -67,7 +69,7 @@ export default function Matchmaking() {
       const currentUser = JSON.parse(currentUserStr);
 
       if (!friends.includes(user.id)) {
-        await fetch("http://localhost:5000/api/auth/friend-request", {
+        await fetch(`${API_URL}/api/auth/friend-request`, {
           method: "POST",
           headers: {
             'Content-Type': 'application/json'
