@@ -62,13 +62,24 @@ export default function Matchmaking() {
 
   const handleAddFriend = async (user) => {
     try {
-      // Optioanlly make an API call to send the formal friend request
-      // await fetch("http://localhost:5000/api/auth/friend-request", ...)
+      const currentUserStr = localStorage.getItem("user");
+      if (!currentUserStr) return alert("Please log in first.");
+      const currentUser = JSON.parse(currentUserStr);
+
       if (!friends.includes(user.id)) {
+        await fetch("http://localhost:5000/api/auth/friend-request", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ fromId: currentUser.id || currentUser._id, toId: user.id })
+        });
         setFriends([...friends, user.id]);
+        alert(`Friend request sent to ${user.name}!`);
       }
     } catch (err) {
       console.error(err);
+      alert("Failed to send friend request.");
     }
   };
 
@@ -166,12 +177,8 @@ export default function Matchmaking() {
               <div key={user.id} className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-md hover:shadow-2xl hover:shadow-emerald-100/30 transition-all duration-300 group relative overflow-hidden hover:-translate-y-2">
                 <div className="absolute top-0 right-0 p-4">
                      <div className="flex flex-col items-end gap-1">
-                        <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-black">
-                            <Sparkles className="w-3 h-3 text-emerald-500" />
-                            {matchPercentage}% Match
-                        </span>
                         {user.scores?.mutualFriends > 0 && (
-                           <span className="text-[10px] text-gray-400 font-bold px-2">
+                           <span className="text-[10px] text-gray-400 font-bold px-2 bg-white rounded-full py-1 shadow-sm border border-gray-100">
                              {user.scores.mutualFriends} Mutual Friend{user.scores.mutualFriends !== 1 ? 's' : ''}
                            </span>
                         )}
@@ -198,7 +205,9 @@ export default function Matchmaking() {
                     >
                       <UserPlus className="w-5 h-5" />
                     </button>
-                    <button className="p-3 bg-gray-50 text-gray-400 hover:bg-emerald-700 hover:text-white rounded-2xl transition-all hover:scale-105 active:scale-95">
+                    <button 
+                      onClick={() => window.location.href = `/friends-chat/${user.id}`}
+                      className="p-3 bg-gray-50 text-gray-400 hover:bg-emerald-700 hover:text-white rounded-2xl transition-all hover:scale-105 active:scale-95">
                       <MessageCircle className="w-5 h-5" />
                     </button>
                   </div>
