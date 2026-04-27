@@ -492,10 +492,17 @@ export default function Dashboard() {
                     <div key={event._id} className="flex items-center justify-between border border-emerald-100 rounded-2xl px-4 py-3 hover:shadow-sm transition-shadow group">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-emerald-700 font-bold uppercase tracking-tight">
-                          {event.registrationDeadline ? new Date(event.registrationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}
+                          Deadline: {event.registrationDeadline ? new Date(event.registrationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
                         </p>
                         <p className="text-gray-800 font-bold truncate pr-2" title={event.title}>{event.title}</p>
-                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{event.source}</p>
+                        <div className="mt-1 space-y-0.5">
+                           <p className="text-[11px] text-gray-500 font-medium">
+                             <span className="font-bold text-gray-700">Location:</span> {event.location && event.location !== "Unknown" ? event.location : "Location not specified"}
+                           </p>
+                           <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter">
+                             Source: {event.source}
+                           </p>
+                        </div>
                       </div>
                       <a
                         href={event.link}

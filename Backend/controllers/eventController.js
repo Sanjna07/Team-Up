@@ -3,7 +3,10 @@ const Event = require("../models/Event");
 exports.getUpcomingEvents = async (req, res) => {
   try {
     const events = await Event.find({
-      registrationDeadline: { $gte: new Date() }
+      $or: [
+        { registrationDeadline: { $gte: new Date() } },
+        { registrationDeadline: null }
+      ]
     })
       .sort({ registrationDeadline: 1 })
       .limit(100);

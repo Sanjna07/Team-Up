@@ -1,18 +1,36 @@
 const fetch = require("node-fetch");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// extract date from snippet (basic)
-const extractDate = (text) => {
-  if (!text) return null;
-
-  // Broadened regex to match various date formats (e.g., "Jan 12, 2026", "12 Feb 2026", "2026-03-15")
-  const dateRegex = /(\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b)|(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}\b)/i;
-  
-  const match = text.match(dateRegex);
-  if (match) {
-    const date = new Date(match[0]);
-    return isNaN(date.getTime()) ? null : date;
-  }
-  return null;
+const fetchUnstopEvents = async () => {
+    try {
+        const res = await fetch("https://unstop.com/api/public/opportunity/search-result?opportunity=hackathons&per_page=30");
+        const data = await res.json();
+        
+        if (!data || !data.data || !data.data.data) return [];
+        return data.data.data.map(item => {
+            let loc = "Location not specified";
+            if (item.region && item.region.toLowerCase().includes('online')) loc = "Virtual";
+            else if (item.locations && item.locations.length > 0) loc = item.locations.map(l => l.city || l.state).filter(Boolean).join(', ');
+            else if (item.address_with_country_logo && item.address_with_country_logo.city) loc = item.address_with_country_logo.city;
+            
+            let deadline = null;
+            if (item.regnRequirements && item.regnRequirements.end_regn_dt) {
+                deadline = new Date(item.regnRequirements.end_regn_dt);
+            }
+            
+            return {
+                title: item.title,
+                link: item.seo_url || `https://unstop.com/${item.public_url}`,
+                description: item.details ? item.details.replace(/<[^>]*>?/gm, '').substring(0, 200) + '...' : '',
+                registrationDeadline: deadline,
+                location: loc && loc.length > 0 ? loc : "Location not specified",
+                source: "unstop.com"
+            };
+        });
+    } catch (e) {
+        console.error("Error fetching Unstop API", e);
+        return [];
+    }
 };
 
 // Validates if the given link is a specific event page and not a generic list or irrelevant site.
@@ -62,6 +80,85 @@ const isValidEventLink = (urlStr) => {
   }
 };
 
+const extractEventDetailsBatch = async (eventsSubset) => {
+  if (!process.env.GEMINI_API_KEY || eventsSubset.length === 0) {
+    return eventsSubset.map(() => ({ registrationDeadline: null, location: "Unknown" }));
+  }
+  
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `Analyze the following list of events. For each event, extract the LAST date of registration (or event date if registration is unavailable) and the location (e.g., "Virtual", "New York, NY", or "Unknown").
+Return ONLY a valid JSON array of objects in the exact same order as the input. Do not include markdown formatting like \`\`\`json.
+Format: [{"registrationDeadline": "YYYY-MM-DD" or null, "location": "Location String" or "Unknown"}]
+
+Events:
+${JSON.stringify(eventsSubset.map(e => ({ title: e.title, snippet: e.description })))}
+`;
+
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
+    if (text.startsWith("\`\`\`json")) text = text.substring(7);
+    if (text.endsWith("\`\`\`")) text = text.substring(0, text.length - 3);
+    
+    // Sometimes it might still output markdown or other text, parse JSON
+    const data = JSON.parse(text.trim());
+    
+    if (!Array.isArray(data) || data.length !== eventsSubset.length) {
+      throw new Error("Mismatch in extracted data length");
+    }
+
+    return data.map(item => ({
+      registrationDeadline: (item.registrationDeadline && item.registrationDeadline !== "null" && item.registrationDeadline !== null) 
+                            ? new Date(item.registrationDeadline) 
+                            : null,
+      location: item.location || "Location not specified"
+    }));
+  } catch (err) {
+    console.error("Error extracting event details with Gemini:", err.message);
+
+    const extractDetailsFallback = (text) => {
+      if (!text) return { date: null, loc: "Location not specified" };
+      let parsedDate = null;
+      let parsedLoc = "Location not specified";
+
+      // 1. Try to find date
+      const dateRegex = /(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}\b)|(\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b)|(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}\b)/i;
+      const match = text.match(dateRegex);
+      if (match) {
+        let d = new Date(match[0]);
+        if (isNaN(d.getTime()) && match[3]) {
+          d = new Date(`${match[3]} ${new Date().getFullYear()}`);
+        }
+        if (!isNaN(d.getTime())) {
+          parsedDate = d;
+        }
+      }
+
+      // 2. Try to find common locations
+      const locRegex = /\b(Virtual|Online|Remote|New York|San Francisco|Los Angeles|Chicago|Seattle|Boston|Austin|London|Toronto|India|Delhi|Bangalore|Hyderabad|Remote)\b/i;
+      const locMatch = text.match(locRegex);
+      if (locMatch) {
+         parsedLoc = locMatch[0];
+         if (['Virtual', 'Online', 'Remote'].includes(parsedLoc)) {
+            parsedLoc = "Virtual";
+         }
+      }
+
+      return { date: parsedDate, loc: parsedLoc };
+    };
+
+    return eventsSubset.map((e) => {
+      const details = extractDetailsFallback(e.snippet);
+      return { 
+        registrationDeadline: details.date, 
+        location: details.loc
+      };
+    });
+  }
+};
+
 exports.fetchEventsFromSerper = async () => {
   // Ensure API Key exists
   if (!process.env.SERPER_API_KEY) {
@@ -74,14 +171,20 @@ exports.fetchEventsFromSerper = async () => {
 
   // Refined queries aiming for actual event pages using site: operators
   const queries = [
-    `site:unstop.com/hackathons OR site:unstop.com/competitions hackathon ${currentYear} OR ${nextYear}`,
     `site:devfolio.co hackathon ${currentYear} OR ${nextYear}`,
     `site:devpost.com hackathon ${currentYear} OR ${nextYear}`,
     `"registration open" MLH hackathon ${currentYear} OR ${nextYear}`
   ];
 
-  let allResults = [];
+  let rawResults = [];
   const seenLinks = new Set();
+  
+  // Fetch from Unstop automatically without serper mapping
+  const unstopEvents = await fetchUnstopEvents();
+  unstopEvents.forEach(item => {
+      rawResults.push(item);
+      seenLinks.add(item.link);
+  });
 
   for (const query of queries) {
     try {
@@ -91,7 +194,7 @@ exports.fetchEventsFromSerper = async () => {
           "X-API-KEY": process.env.SERPER_API_KEY,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ q: query, num: 20 }) // Fetch more to account for filtered out results
+        body: JSON.stringify({ q: query, num: 20 })
       });
 
       const data = await res.json();
@@ -104,12 +207,10 @@ exports.fetchEventsFromSerper = async () => {
               hostname = new URL(item.link).hostname.replace(/^www\./, '');
             } catch (e) {}
 
-            allResults.push({
+            rawResults.push({
               title: item.title,
               link: item.link,
               description: item.snippet,
-              // Default to 30 days if not found
-              registrationDeadline: extractDate(item.snippet) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 
               source: hostname
             });
             seenLinks.add(item.link);
@@ -121,5 +222,21 @@ exports.fetchEventsFromSerper = async () => {
     }
   }
 
-  return allResults;
+  // Batch process with Gemini to get deadlines and locations for Serper-scraped events
+  // Exclude unstop items which already have exact deadlines/locations
+  const eventsToParse = rawResults.filter(e => e.source !== "unstop.com");
+  
+  if (eventsToParse.length > 0) {
+    const batchedDetails = await extractEventDetailsBatch(eventsToParse);
+    let parsedIdx = 0;
+    for (let i = 0; i < rawResults.length; i++) {
+      if (rawResults[i].source !== "unstop.com") {
+        rawResults[i].registrationDeadline = batchedDetails[parsedIdx].registrationDeadline;
+        rawResults[i].location = batchedDetails[parsedIdx].location;
+        parsedIdx++;
+      }
+    }
+  }
+
+  return rawResults;
 };

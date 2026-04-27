@@ -66,22 +66,30 @@ exports.getRecommendations = async (req, res) => {
 
     const result = await session.run(query, params);
 
-    const matches = result.records.map(record => ({
-      id: record.get("id"),
-      name: record.get("name"),
-      skills: record.get("skills"),
-      domains: record.get("domains"),
-      scores: {
-        vectorSimilarity: record.get("vectorScore"),
-        mutualFriends: record.get("mutualFriendsCount").toNumber(),
-        sharedRooms: record.get("sharedRoomsCount").toNumber(),
-        total: record.get("finalScore")
-      }
-    }));
+    const matches = result.records.map(record => {
+      const vScore = record.get("vectorScore");
+      const finalScoreRaw = record.get("finalScore");
+      
+      const vScoreNum = typeof vScore === 'number' ? vScore : (vScore?.toNumber ? vScore.toNumber() : 0);
+      const finalScoreNum = typeof finalScoreRaw === 'number' ? finalScoreRaw : (finalScoreRaw?.toNumber ? finalScoreRaw.toNumber() : (finalScoreRaw?.low || 0));
+
+      return {
+        id: record.get("id"),
+        name: record.get("name"),
+        skills: record.get("skills"),
+        domains: record.get("domains"),
+        scores: {
+          vectorSimilarity: vScoreNum,
+          mutualFriends: record.get("mutualFriendsCount").toNumber(),
+          sharedRooms: record.get("sharedRoomsCount").toNumber(),
+          total: finalScoreNum
+        }
+      };
+    });
 
     // Optionally hydrate profile images from MongoDB
     const matchIds = matches.map(m => m.id);
-    const mongoData = await User.find({ _id: { $in: matchIds } }).select("profileImage personality email");
+    const mongoData = await User.find({ _id: { $in: matchIds } }).select("profileImage personality email github linkedIn");
     
     const hydratedMatches = matches.map(match => {
       const dbData = mongoData.find(u => u._id.toString() === match.id);
@@ -90,6 +98,8 @@ exports.getRecommendations = async (req, res) => {
         profileImage: dbData?.profileImage || null,
         personality: dbData?.personality || null,
         email: dbData?.email || null,
+        github: dbData?.github || null,
+        linkedIn: dbData?.linkedIn || null,
       };
     });
 
